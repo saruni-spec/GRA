@@ -13,8 +13,14 @@ export const processInput = async (req: Request, res: Response) => {
     // 1. Find or Create User
     let user = await prisma.user.findUnique({ where: { phoneNumber } });
     if (!user) {
+      // For workflow auto-creation, use placeholder names
+      // Users should register properly via /auth/register for complete profile
       user = await prisma.user.create({
-        data: { phoneNumber }
+        data: { 
+          phoneNumber,
+          firstName: 'User',
+          lastName: phoneNumber.slice(-4) // Use last 4 digits as temporary last name
+        }
       });
       console.log(`Created new user: ${phoneNumber}`);
     }

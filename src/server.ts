@@ -3,6 +3,7 @@ import bodyParser from 'body-parser';
 import cors from 'cors';
 import dotenv from 'dotenv';
 // Routes
+import authRoutes from './routes/auth.routes';
 import workflowRoutes from './routes/workflow.routes';
 import osintRoutes from './routes/osint.routes';
 import reportsRoutes from './routes/reports.routes';
@@ -26,6 +27,7 @@ app.use((req, res, next) => {
 });
 
 
+app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/workflow', workflowRoutes);
 app.use('/api/v1/osint', osintRoutes);
 app.use('/api/v1/reports', reportsRoutes);

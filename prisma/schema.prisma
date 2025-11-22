@@ -13,11 +13,35 @@ datasource db {
 // Represents a Taxpayer/Business Owner interacting via WhatsApp
 model User {
   id           String        @id @default(uuid())
+  
+  // Personal Information
+  firstName    String
+  lastName     String
+  email        String?       @unique
   phoneNumber  String        @unique // E.164 format (e.g., +233...)
-  businessName String?
-  location     String?
+  
+  // Business Information
+  businessName        String?
+  businessType        String?   // e.g., "Retail", "Services", "Manufacturing"
+  businessCategory    String?   // e.g., "Tailor", "Food Vendor", "Electronics"
+  businessDescription String?
+  
+  // Location Information
+  location            String?   // Human-readable address
+  city                String?
+  region              String?
+  gpsLat              Float?
+  gpsLng              Float?
+  
+  // Registration Details
+  tinNumber           String?   @unique // Tax Identification Number
+  registrationDate    DateTime  @default(now())
+  isVerified          Boolean   @default(false)
+  
+  // Metadata
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
+  
   transactions Transaction[]
 
   @@map("users")
