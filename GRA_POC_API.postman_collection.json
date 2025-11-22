@@ -1,0 +1,688 @@
+{
+    "info": {
+        "_postman_id": "gra-poc-api-collection",
+        "name": "Ghana Revenue Authority - POC API",
+        "description": "API collection for the Ghana Revenue Authority Proof of Concept backend. Includes endpoints for user authentication, WhatsApp workflow integration, OSINT lead generation, and bookkeeping reports.",
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    },
+    "item": [
+        {
+            "name": "Authentication",
+            "item": [
+                {
+                    "name": "Register User",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"firstName\": \"John\",\n  \"lastName\": \"Mensah\",\n  \"phoneNumber\": \"+233244123456\",\n  \"email\": \"john.mensah@example.com\",\n  \"businessName\": \"Mensah Trading Co.\",\n  \"businessType\": \"Retail\",\n  \"businessCategory\": \"General Goods\",\n  \"businessDescription\": \"Small retail shop selling general goods\",\n  \"location\": \"Madina Market\",\n  \"city\": \"Accra\",\n  \"region\": \"Greater Accra\",\n  \"gpsLat\": \"5.6892\",\n  \"gpsLng\": \"-0.1677\",\n  \"tinNumber\": \"C0012345678\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/auth/register",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "auth",
+                                "register"
+                            ]
+                        },
+                        "description": "Register a new user with mandatory fields (firstName, lastName, phoneNumber) and optional business details."
+                    },
+                    "response": [
+                        {
+                            "name": "Success Response",
+                            "originalRequest": {
+                                "method": "POST",
+                                "header": [],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n  \"firstName\": \"John\",\n  \"lastName\": \"Mensah\",\n  \"phoneNumber\": \"+233244123456\"\n}"
+                                },
+                                "url": {
+                                    "raw": "{{base_url}}/api/v1/auth/register",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "v1",
+                                        "auth",
+                                        "register"
+                                    ]
+                                }
+                            },
+                            "status": "Created",
+                            "code": 201,
+                            "_postman_previewlanguage": "json",
+                            "header": [],
+                            "cookie": [],
+                            "body": "{\n  \"status\": \"SUCCESS\",\n  \"message\": \"User registered successfully\",\n  \"user\": {\n    \"id\": \"clx1234567890\",\n    \"firstName\": \"John\",\n    \"lastName\": \"Mensah\",\n    \"email\": null,\n    \"phoneNumber\": \"+233244123456\",\n    \"businessName\": null,\n    \"businessType\": null,\n    \"businessCategory\": null,\n    \"registrationDate\": \"2025-11-22T18:41:38.000Z\",\n    \"isVerified\": false\n  }\n}"
+                        }
+                    ]
+                },
+                {
+                    "name": "Get User Profile",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/auth/profile/:userId",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "auth",
+                                "profile",
+                                ":userId"
+                            ],
+                            "variable": [
+                                {
+                                    "key": "userId",
+                                    "value": "clx1234567890",
+                                    "description": "User ID"
+                                }
+                            ]
+                        },
+                        "description": "Retrieve user profile by user ID, including the last 10 transactions."
+                    },
+                    "response": [
+                        {
+                            "name": "Success Response",
+                            "originalRequest": {
+                                "method": "GET",
+                                "header": [],
+                                "url": {
+                                    "raw": "{{base_url}}/api/v1/auth/profile/clx1234567890",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "v1",
+                                        "auth",
+                                        "profile",
+                                        "clx1234567890"
+                                    ]
+                                }
+                            },
+                            "status": "OK",
+                            "code": 200,
+                            "_postman_previewlanguage": "json",
+                            "header": [],
+                            "cookie": [],
+                            "body": "{\n  \"status\": \"SUCCESS\",\n  \"user\": {\n    \"id\": \"clx1234567890\",\n    \"firstName\": \"John\",\n    \"lastName\": \"Mensah\",\n    \"email\": \"john.mensah@example.com\",\n    \"phoneNumber\": \"+233244123456\",\n    \"businessName\": \"Mensah Trading Co.\",\n    \"businessType\": \"Retail\",\n    \"businessCategory\": \"General Goods\",\n    \"businessDescription\": \"Small retail shop selling general goods\",\n    \"location\": \"Madina Market\",\n    \"city\": \"Accra\",\n    \"region\": \"Greater Accra\",\n    \"gpsLat\": 5.6892,\n    \"gpsLng\": -0.1677,\n    \"tinNumber\": \"C0012345678\",\n    \"isVerified\": false,\n    \"registrationDate\": \"2025-11-22T18:41:38.000Z\",\n    \"createdAt\": \"2025-11-22T18:41:38.000Z\",\n    \"updatedAt\": \"2025-11-22T18:41:38.000Z\",\n    \"transactions\": []\n  }\n}"
+                        }
+                    ]
+                },
+                {
+                    "name": "Update User Profile",
+                    "request": {
+                        "method": "PATCH",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"email\": \"john.updated@example.com\",\n  \"businessName\": \"Mensah & Sons Trading\",\n  \"tinNumber\": \"C0012345679\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/auth/profile/:userId",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "auth",
+                                "profile",
+                                ":userId"
+                            ],
+                            "variable": [
+                                {
+                                    "key": "userId",
+                                    "value": "clx1234567890",
+                                    "description": "User ID"
+                                }
+                            ]
+                        },
+                        "description": "Update user profile with partial updates. Only updates fields that are provided in the request body."
+                    },
+                    "response": [
+                        {
+                            "name": "Success Response",
+                            "originalRequest": {
+                                "method": "PATCH",
+                                "header": [],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n  \"email\": \"john.updated@example.com\"\n}"
+                                },
+                                "url": {
+                                    "raw": "{{base_url}}/api/v1/auth/profile/clx1234567890",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "v1",
+                                        "auth",
+                                        "profile",
+                                        "clx1234567890"
+                                    ]
+                                }
+                            },
+                            "status": "OK",
+                            "code": 200,
+                            "_postman_previewlanguage": "json",
+                            "header": [],
+                            "cookie": [],
+                            "body": "{\n  \"status\": \"SUCCESS\",\n  \"message\": \"User profile updated successfully\",\n  \"updatedFields\": [\"email\"],\n  \"user\": {\n    \"id\": \"clx1234567890\",\n    \"firstName\": \"John\",\n    \"lastName\": \"Mensah\",\n    \"email\": \"john.updated@example.com\",\n    \"phoneNumber\": \"+233244123456\",\n    \"businessName\": \"Mensah Trading Co.\",\n    \"businessType\": \"Retail\",\n    \"businessCategory\": \"General Goods\",\n    \"businessDescription\": \"Small retail shop selling general goods\",\n    \"location\": \"Madina Market\",\n    \"city\": \"Accra\",\n    \"region\": \"Greater Accra\",\n    \"tinNumber\": \"C0012345678\",\n    \"isVerified\": false,\n    \"updatedAt\": \"2025-11-22T19:00:00.000Z\"\n  }\n}"
+                        }
+                    ]
+                }
+            ],
+            "description": "User authentication and profile management endpoints."
+        },
+        {
+            "name": "WhatsApp Workflow",
+            "item": [
+                {
+                    "name": "Process Input (Text/Audio)",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"phoneNumber\": \"+233244123456\",\n  \"inputType\": \"TEXT\",\n  \"content\": \"I sold 5 bags of rice for 250 cedis\",\n  \"workflowSessionId\": \"wf_session_123\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/workflow/process-input",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "workflow",
+                                "process-input"
+                            ]
+                        },
+                        "description": "Process text or audio input from WhatsApp Workflow. Uses Gemini AI to extract transaction details (type, category, amount, currency) from natural language input."
+                    },
+                    "response": [
+                        {
+                            "name": "Success Response",
+                            "originalRequest": {
+                                "method": "POST",
+                                "header": [],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n  \"phoneNumber\": \"+233244123456\",\n  \"inputType\": \"TEXT\",\n  \"content\": \"I sold 5 bags of rice for 250 cedis\"\n}"
+                                },
+                                "url": {
+                                    "raw": "{{base_url}}/api/v1/workflow/process-input",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "v1",
+                                        "workflow",
+                                        "process-input"
+                                    ]
+                                }
+                            },
+                            "status": "OK",
+                            "code": 200,
+                            "_postman_previewlanguage": "json",
+                            "header": [],
+                            "cookie": [],
+                            "body": "{\n  \"status\": \"SUCCESS\",\n  \"replyText\": \"✅ Recorded:INCOME Sales - 250 GHS. Is this correct?\",\n  \"requiresConfirmation\": true,\n  \"extractedData\": {\n    \"type\": \"INCOME\",\n    \"category\": \"Sales\",\n    \"amount\": 250,\n    \"currency\": \"GHS\"\n  }\n}"
+                        }
+                    ]
+                },
+                {
+                    "name": "Confirm Transaction",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"phoneNumber\": \"+233244123456\",\n  \"confirmation\": \"YES\",\n  \"transactionData\": {\n    \"type\": \"INCOME\",\n    \"category\": \"Sales\",\n    \"amount\": 250,\n    \"currency\": \"GHS\"\n  }\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/workflow/confirm-transaction",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "workflow",
+                                "confirm-transaction"
+                            ]
+                        },
+                        "description": "Confirm or cancel a transaction extracted from WhatsApp input. If confirmed, saves the transaction to the database."
+                    },
+                    "response": [
+                        {
+                            "name": "Confirmed Response",
+                            "originalRequest": {
+                                "method": "POST",
+                                "header": [],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n  \"phoneNumber\": \"+233244123456\",\n  \"confirmation\": \"YES\",\n  \"transactionData\": {\n    \"type\": \"INCOME\",\n    \"category\": \"Sales\",\n    \"amount\": 250,\n    \"currency\": \"GHS\"\n  }\n}"
+                                },
+                                "url": {
+                                    "raw": "{{base_url}}/api/v1/workflow/confirm-transaction",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "v1",
+                                        "workflow",
+                                        "confirm-transaction"
+                                    ]
+                                }
+                            },
+                            "status": "OK",
+                            "code": 200,
+                            "_postman_previewlanguage": "json",
+                            "header": [],
+                            "cookie": [],
+                            "body": "{\n  \"status\": \"SAVED\",\n  \"replyText\": \"Transaction saved successfully! 🎉\"\n}"
+                        },
+                        {
+                            "name": "Cancelled Response",
+                            "originalRequest": {
+                                "method": "POST",
+                                "header": [],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n  \"phoneNumber\": \"+233244123456\",\n  \"confirmation\": \"NO\",\n  \"transactionData\": {}\n}"
+                                },
+                                "url": {
+                                    "raw": "{{base_url}}/api/v1/workflow/confirm-transaction",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "v1",
+                                        "workflow",
+                                        "confirm-transaction"
+                                    ]
+                                }
+                            },
+                            "status": "OK",
+                            "code": 200,
+                            "_postman_previewlanguage": "json",
+                            "header": [],
+                            "cookie": [],
+                            "body": "{\n  \"status\": \"CANCELLED\",\n  \"replyText\": \"Transaction cancelled.\"\n}"
+                        }
+                    ]
+                }
+            ],
+            "description": "WhatsApp Workflow integration endpoints for AI-assisted bookkeeping via WhatsApp messages."
+        },
+        {
+            "name": "OSINT",
+            "item": [
+                {
+                    "name": "Trigger Scrape Job",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"location\": \"Madina Market, Accra\",\n  \"businessType\": \"Retail\",\n  \"source\": \"GOOGLE_MAPS\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/osint/scrape",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "osint",
+                                "scrape"
+                            ]
+                        },
+                        "description": "Trigger a web scraping job to collect business leads from various sources (Google Maps, social media, etc.)."
+                    },
+                    "response": [
+                        {
+                            "name": "Success Response",
+                            "originalRequest": {
+                                "method": "POST",
+                                "header": [],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n  \"location\": \"Madina Market, Accra\",\n  \"businessType\": \"Retail\",\n  \"source\": \"GOOGLE_MAPS\"\n}"
+                                },
+                                "url": {
+                                    "raw": "{{base_url}}/api/v1/osint/scrape",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "v1",
+                                        "osint",
+                                        "scrape"
+                                    ]
+                                }
+                            },
+                            "status": "OK",
+                            "code": 200,
+                            "_postman_previewlanguage": "json",
+                            "header": [],
+                            "cookie": [],
+                            "body": "{\n  \"jobId\": \"job_1732305698000\",\n  \"status\": \"QUEUED\"\n}"
+                        }
+                    ]
+                },
+                {
+                    "name": "Get Leads",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/osint/leads",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "osint",
+                                "leads"
+                            ]
+                        },
+                        "description": "Retrieve collected business leads from OSINT scraping operations."
+                    },
+                    "response": [
+                        {
+                            "name": "Success Response",
+                            "originalRequest": {
+                                "method": "GET",
+                                "header": [],
+                                "url": {
+                                    "raw": "{{base_url}}/api/v1/osint/leads",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "v1",
+                                        "osint",
+                                        "leads"
+                                    ]
+                                }
+                            },
+                            "status": "OK",
+                            "code": 200,
+                            "_postman_previewlanguage": "json",
+                            "header": [],
+                            "cookie": [],
+                            "body": "[\n  {\n    \"id\": \"mock-uuid\",\n    \"businessName\": \"Ama Seamstress\",\n    \"phoneNumber\": \"+233244123456\",\n    \"location\": \"Madina Market\",\n    \"confidenceScore\": 0.85,\n    \"source\": \"GOOGLE_MAPS\"\n  }\n]"
+                        }
+                    ]
+                }
+            ],
+            "description": "OSINT (Open Source Intelligence) endpoints for lead generation and business discovery."
+        },
+        {
+            "name": "Reports",
+            "item": [
+                {
+                    "name": "Get Daily Summary",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/reports/daily-summary/:userId",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "reports",
+                                "daily-summary",
+                                ":userId"
+                            ],
+                            "variable": [
+                                {
+                                    "key": "userId",
+                                    "value": "clx1234567890",
+                                    "description": "User ID"
+                                }
+                            ]
+                        },
+                        "description": "Get daily financial summary for a user, including total income, total expenses, net profit, and transaction count."
+                    },
+                    "response": [
+                        {
+                            "name": "Success Response",
+                            "originalRequest": {
+                                "method": "GET",
+                                "header": [],
+                                "url": {
+                                    "raw": "{{base_url}}/api/v1/reports/daily-summary/clx1234567890",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "v1",
+                                        "reports",
+                                        "daily-summary",
+                                        "clx1234567890"
+                                    ]
+                                }
+                            },
+                            "status": "OK",
+                            "code": 200,
+                            "_postman_previewlanguage": "json",
+                            "header": [],
+                            "cookie": [],
+                            "body": "{\n  \"date\": \"2025-11-22\",\n  \"currency\": \"GHS\",\n  \"totalIncome\": \"1250.00\",\n  \"totalExpense\": \"450.00\",\n  \"netProfit\": \"800.00\",\n  \"transactionCount\": 8\n}"
+                        }
+                    ]
+                },
+                {
+                    "name": "Get Transactions",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/reports/transactions/:userId",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "reports",
+                                "transactions",
+                                ":userId"
+                            ],
+                            "variable": [
+                                {
+                                    "key": "userId",
+                                    "value": "clx1234567890",
+                                    "description": "User ID"
+                                }
+                            ]
+                        },
+                        "description": "Get the last 50 transactions for a user, ordered by most recent first."
+                    },
+                    "response": [
+                        {
+                            "name": "Success Response",
+                            "originalRequest": {
+                                "method": "GET",
+                                "header": [],
+                                "url": {
+                                    "raw": "{{base_url}}/api/v1/reports/transactions/clx1234567890",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "v1",
+                                        "reports",
+                                        "transactions",
+                                        "clx1234567890"
+                                    ]
+                                }
+                            },
+                            "status": "OK",
+                            "code": 200,
+                            "_postman_previewlanguage": "json",
+                            "header": [],
+                            "cookie": [],
+                            "body": "[\n  {\n    \"id\": \"tx_1234567890\",\n    \"userId\": \"clx1234567890\",\n    \"type\": \"INCOME\",\n    \"category\": \"Sales\",\n    \"amount\": 250,\n    \"currency\": \"GHS\",\n    \"rawText\": \"Workflow Entry\",\n    \"confidenceScore\": 1.0,\n    \"createdAt\": \"2025-11-22T18:45:00.000Z\",\n    \"updatedAt\": \"2025-11-22T18:45:00.000Z\"\n  },\n  {\n    \"id\": \"tx_0987654321\",\n    \"userId\": \"clx1234567890\",\n    \"type\": \"EXPENSE\",\n    \"category\": \"Transport\",\n    \"amount\": 50,\n    \"currency\": \"GHS\",\n    \"rawText\": \"Workflow Entry\",\n    \"confidenceScore\": 1.0,\n    \"createdAt\": \"2025-11-22T17:30:00.000Z\",\n    \"updatedAt\": \"2025-11-22T17:30:00.000Z\"\n  }\n]"
+                        }
+                    ]
+                }
+            ],
+            "description": "Bookkeeping reports and transaction history endpoints."
+        },
+        {
+            "name": "Health & Testing",
+            "item": [
+                {
+                    "name": "Health Check",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/health",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "health"
+                            ]
+                        },
+                        "description": "Check if the API server is running and healthy."
+                    },
+                    "response": [
+                        {
+                            "name": "Success Response",
+                            "originalRequest": {
+                                "method": "GET",
+                                "header": [],
+                                "url": {
+                                    "raw": "{{base_url}}/health",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "health"
+                                    ]
+                                }
+                            },
+                            "status": "OK",
+                            "code": 200,
+                            "_postman_previewlanguage": "json",
+                            "header": [],
+                            "cookie": [],
+                            "body": "{\n  \"status\": \"OK\",\n  \"timestamp\": \"2025-11-22T18:41:38.000Z\"\n}"
+                        }
+                    ]
+                },
+                {
+                    "name": "Test Database Connection",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/test-db",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "test-db"
+                            ]
+                        },
+                        "description": "Test database connectivity and return user count."
+                    },
+                    "response": [
+                        {
+                            "name": "Success Response",
+                            "originalRequest": {
+                                "method": "GET",
+                                "header": [],
+                                "url": {
+                                    "raw": "{{base_url}}/test-db",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "test-db"
+                                    ]
+                                }
+                            },
+                            "status": "OK",
+                            "code": 200,
+                            "_postman_previewlanguage": "json",
+                            "header": [],
+                            "cookie": [],
+                            "body": "{\n  \"success\": true,\n  \"userCount\": 5\n}"
+                        }
+                    ]
+                }
+            ],
+            "description": "Health check and testing endpoints."
+        }
+    ],
+    "variable": [
+        {
+            "key": "base_url",
+            "value": "https://gra-kappa.vercel.app",
+            "type": "string"
+        },
+        {
+            "key": "base_url_local",
+            "value": "http://localhost:3000",
+            "type": "string",
+            "disabled": true
+        }
+    ]
+}

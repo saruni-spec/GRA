@@ -1,0 +1,8 @@
+node_modules
+.env
+.env.local
+.git
+*.log
+src
+tsconfig.json
+nodemon.json
