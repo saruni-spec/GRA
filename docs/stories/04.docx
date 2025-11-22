@@ -1,0 +1,52 @@
+**GEOSPATIAL MAPPING SYSTEM: AN EXPLAINER**
+
+This document outlines the system for transforming our list of identified businesses into a **digital, interactive map**, which will allow tax officers to visualize taxpayer distribution and plan their field operations effectively.
+
+-----
+
+### 1\. System Goal (The Big Picture)
+
+**Our Goal:** To move from an **address-based** to a **location-based** approach for the informal sector.
+
+  * **We will do:** Use GPS coordinates, data science, and a free mapping tool.
+  * **We will get:** A complete digital taxpayer map of Ghana that shows exactly where informal businesses are clustered.
+  * **Because of:** Informal businesses rarely have fixed, formal addresses, so we must rely on geographical coordinates to effectively locate and map them.
+
+**Tech Tools Used:** We will use a database called **PostgreSQL with the PostGIS extension** to store and query all the geographical data efficiently. The visual map will be built using the free, open-source **OpenStreetMap** and a web mapping library called **Leaflet.js**.
+
+-----
+
+### 2\. Location Data Collection (Getting the GPS Coordinates)
+
+Since formal addresses are unreliable, we collect location data from three primary sources.
+
+| What We Will Do (X)                                                                                                                                     | What We Will Get (Y)                                                               | Why We Do It (Z)                                                                                                                                                                  |
+| :-----------------------------------------------------------------------------------------------------------------------------------------------------: | :--------------------------------------------------------------------------------: | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------: |
+| **Ask the business to share their live location via WhatsApp** after they confirm their business status.                                                | **Highly Accurate GPS Coordinates** ({lat: 5.6837, lng: -0.1965}).                 | **WhatsApp Location Sharing** is a native, user-controlled feature that works on all smartphones, eliminating the need for training and ensuring the most accurate location data. |
+| **Import GPS coordinates** extracted from our OSINT scraping (Google Maps, Facebook Marketplace location tags, etc.).                                   | **Secondary GPS Data** for businesses that do not respond to the WhatsApp request. | This complements the primary method by adding location data for businesses already identified on online platforms.                                                                |
+| For businesses without smartphones, we assign them to a **Predefined Market Boundary** (e.g., Makola Market, Madina Market) from a list of known areas. | **Backup Location Data** in the form of a market's center point.                   | This ensures every identified business, even the most traditional ones, has a map location for planning purposes.                                                                 |
+
+-----
+
+### 3\. Clustering and Hotspot Detection
+
+Once we have a set of GPS points, we turn them into meaningful market clusters.
+
+| What We Will Do (X)                                                                                                                                                                                                           | What We Will Get (Y)                                                                                                             | Why We Do It (Z)                                                                                                                                                                  |
+| :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------: | :------------------------------------------------------------------------------------------------------------------------------: | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------: |
+| Use the **DBSCAN algorithm** (Density-Based Spatial Clustering) via the geospatial analysis tool **Turf.js** to group businesses. The rule is: if **≥10 businesses** are found within a **500m radius**, they form a cluster. | **Market Clusters** (labeled "Market Hotspots") and an assigned ID. For example, *Cluster\_001: Madina Market (127 businesses)*. | This automatically identifies areas with high informal economic density, allowing the GRA to see where their physical outreach efforts should be concentrated for maximum impact. |
+| We will also calculate a **Density Score** for each cluster (businesses per km²).                                                                                                                                             | A prioritized list of high-density areas.                                                                                        | This ranks the clusters by activity, providing a data-driven basis for resource allocation instead of relying on assumption.                                                      |
+
+-----
+
+### 4\. Officer Dashboard Map Features
+
+The final data is displayed on an interactive dashboard map built with **React.js** and **Leaflet.js**.
+
+| What We Will Do (X)                                                                                                            | What We Will Get (Y)                                                                                                  | Why We Do It (Z)                                                                                                                                                                  |
+| :----------------------------------------------------------------------------------------------------------------------------: | :-------------------------------------------------------------------------------------------------------------------: | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------: |
+| **Color-code business markers** on the map.                                                                                    | **Visual Status Indicators:** Red (Unregistered), Yellow (Pending Verification), Green (Registered & Compliant).      | This gives officers a rapid, real-time visual assessment of compliance across an entire region, immediately highlighting priority areas (the Red markers).                        |
+| Generate a **Heatmap** that counts businesses per 1km² grid square, with color intensity showing density (Low ░ to High ████). | A clear visual of **Hot Zones** of informal economic activity.                                                        | This shows the areas of highest concentration across the city, providing a big-picture planning tool for regional management and resource deployment.                             |
+| Build an offline support feature using **IndexedDB (localforage)** to pre-cache map tiles and business data.                   | **Full Map Functionality** for officers even when they have poor or no internet connectivity (e.g., a 3G connection). | This solves the challenge of poor internet in many areas, ensuring that the system is reliable in the field, which is critical for high officer adoption (Target: 90%+ adoption). |
+| Create API endpoints (`/api/map/businesses`, `/api/map/clusters`, `/api/map/heatmap`)                                          | **Structured Data Feeds** that the dashboard's frontend can consume.                                                  | This separates the backend logic from the frontend presentation, making the system scalable, easier to maintain, and allowing different teams to work simultaneously.             |
+

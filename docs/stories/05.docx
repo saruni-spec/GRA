@@ -1,0 +1,53 @@
+**AI/ML MODELS FOR TAX AUTOMATION: AN EXPLAINER**
+
+This document outlines how we will use simple, practical Artificial Intelligence (AI) and Machine Learning (ML) components to **automate the tax bookkeeping process** for informal businesses through WhatsApp.
+
+-----
+
+1\. System Goal (The Big Picture)
+
+**Our Goal:** To provide business owners with an **effortless, automated bookkeeping system** accessed via voice or text message on WhatsApp, with an automation target of **95%+** for transaction categorization.
+
+| What We Will Do (X)                                                                                                                                                        | What We Will Get (Y)                                                                 | Why We Do It (Z)                                                                                                                                                         |
+| :------------------------------------------------------------------------------------------------------------------------------------------------------------------------: | :----------------------------------------------------------------------------------: | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------: |
+| Use **lightweight, rule-based models** and **proven Google Cloud APIs** for all automation tasks (Voice-to-Text, Transaction Categorization, and Business Classification). | A robust, highly accurate, and low-cost system in a short timeframe (6-8 weeks PoC). | **Complex Deep Learning is too slow and data-intensive** for a quick Proof-of-Concept; simple rules achieve high accuracy for structured tasks like transaction logging. |
+
+-----
+
+2\. Component 1: Effortless Bookkeeping with Voice
+
+This makes it easy for users to log transactions by simply speaking.
+
+| What We Will Do (X)                                                  | What We Will Get (Y)                                                                      | Why We Do It (Z)                                                                                                                                                               |
+| :------------------------------------------------------------------: | :---------------------------------------------------------------------------------------: | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------: |
+| Use the **Google Cloud Speech-to-Text API** (a world-class service). | A **transcribed text message** from the user’s WhatsApp voice note (e.g., *"250 cedis"*). | The Google API has high accuracy (Target: **≥90%**), supports both **English and Twi**, and is cost-effective for the PoC. **Voice notes are NOT stored** after transcription. |
+
+-----
+
+3\. Component 2: Automated Transaction Categorization
+
+This is the core of the system: taking the text and turning it into tax-ready data.
+
+| What We Will Do (X)                                                                                                                                                                                            | What We Will Get (Y)                                                                                                                               | Why We Do It (Z)                                                                                                                                               |
+| :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------: | :------------------------------------------------------------------------------------------------------------------------------------------------: | :------------------------------------------------------------------------------------------------------------------------------------------------------------: |
+| Apply a **Rule-Based Logic** engine that uses **keyword dictionaries** (e.g., "sold," "received," "bought," "paid") and **regular expressions (regex)** to identify patterns in the transcribed or typed text. | A **Structured Data Output** that includes the Transaction Type (INCOME/EXPENSE), the Amount, and the Category (e.g., *INCOME – Sales – 250 GHS*). | This hybrid approach is expected to achieve a Transaction Categorization Accuracy of **≥95%**, turning raw text into a standard record for the tax calculator. |
+| Use the same **Keyword Matching** logic as Document \#3 to automatically assign a business type (e.g., 'chop bar' = Food Services).                                                                            | An automated **Business Type Classification** with a target accuracy of **≥80%**.                                                                  | This enables targeted tax information and simplifies the registration process.                                                                                 |
+
+-----
+
+4\. Handling Uncertainty (Human-in-the-Loop)
+
+The system includes a fallback mechanism for when the AI is not 100% confident.
+
+| What We Will Do (X)                                                                                                                                                                                   | What We Will Get (Y)                                                                                                                | Why We Do It (Z)                                                                                                                                                         |
+| :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------: | :---------------------------------------------------------------------------------------------------------------------------------: | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------: |
+| If the system is **uncertain** (e.g., if it detects an expense keyword but **cannot find an amount**), the transaction receives a lower **Confidence Score** (e.g., below 90%).                       | A system-generated WhatsApp reply asking the user to **clarify the missing detail** (e.g., *"Please reply with the amount spent"*). | This creates a **Human-in-the-Loop** system that immediately seeks user input for uncertain records, ensuring that the final data stored remains highly accurate (95%+). |
+| The goal is to keep the **Clarification Rate below 10%** of transactions, meaning 9 out of 10 transactions are processed completely automatically and with high confidence, minimizing user friction. | A fast and reliable user experience.                                                                                                | This keeps the process simple for the business owner while maintaining the high data quality needed for tax calculations.                                                |
+
+-----
+
+5\. Privacy and Performance
+
+  * **Privacy:** Voice notes are **not stored** after transcription. All text data is **encrypted** in transit and at rest, and there is **no third-party data sharing** beyond the Google API. Users can delete all their data via a WhatsApp command.
+  * **Performance:** The system is optimized to process each transaction in **less than 2 seconds**, providing a seamless user experience even for high-volume traders.
+  * **Cost Estimate:** The estimated cost for running the Google Cloud Speech-to-Text API for **1,000 transactions is approximately $4**, making the component extremely cost-effective for a large-scale rollout.

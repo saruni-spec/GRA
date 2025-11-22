@@ -1,0 +1,72 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Represents a Taxpayer/Business Owner interacting via WhatsApp
+model User {
+  id           String        @id @default(uuid())
+  phoneNumber  String        @unique // E.164 format (e.g., +233...)
+  businessName String?
+  location     String?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  transactions Transaction[]
+
+  @@map("users")
+}
+
+// The core ledger: Double-entry style records of Income/Expense
+model Transaction {
+  id              String   @id @default(uuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id])
+  
+  type            TransactionType
+  category        String   // e.g., "Sales", "Transport", "Utilities"
+  amount          Decimal  @db.Decimal(12, 2)
+  currency        String   @default("GHS")
+  
+  rawText         String?  // Original WhatsApp message for audit
+  confidenceScore Float?   // NLP confidence (0.0 - 1.0)
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@map("transactions")
+}
+
+enum TransactionType {
+  INCOME
+  EXPENSE
+}
+
+// OSINT Leads: Potential businesses identified from Google Maps/Facebook
+model Lead {
+  id              String   @id @default(uuid())
+  source          String   // e.g., "GOOGLE_MAPS", "FACEBOOK"
+  externalId      String?  // ID from the source if available
+  
+  businessName    String
+  phoneNumber     String?  // Raw phone number scraped
+  normalizedPhone String?  // E.164 format if valid
+  
+  location        String?
+  gpsLat          Float?
+  gpsLng          Float?
+  
+  category        String?  // Scraped category (e.g., "Tailor")
+  confidenceScore Float    // 0.0 - 1.0 based on data quality
+  
+  isOnboarded     Boolean  @default(false) // True if converted to User
+  scrapedAt       DateTime @default(now())
+
+  @@map("leads")
+}
