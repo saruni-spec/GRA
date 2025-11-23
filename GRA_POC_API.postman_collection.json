@@ -692,7 +692,7 @@
     "variable": [
         {
             "key": "base_url",
-            "value": "https://gra-kappa.vercel.app",
+            "value": "https://gra-rouge.vercel.app",
             "type": "string"
         },
         {
