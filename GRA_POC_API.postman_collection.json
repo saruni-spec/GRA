@@ -367,7 +367,7 @@
                         ],
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n  \"location\": \"Madina Market, Accra\",\n  \"businessType\": \"Retail\",\n  \"source\": \"GOOGLE_MAPS\"\n}"
+                            "raw": "{\\n  \\\"location\\\": \\\"Madina, Accra\\\",\\n  \\\"businessType\\\": \\\"hair salon\\\",\\n  \\\"source\\\": \\\"GOOGLE_MAPS\\\"\\n}"
                         },
                         "url": {
                             "raw": "{{base_url}}/api/v1/osint/scrape",
@@ -411,7 +411,7 @@
                             "_postman_previewlanguage": "json",
                             "header": [],
                             "cookie": [],
-                            "body": "{\n  \"jobId\": \"job_1732305698000\",\n  \"status\": \"QUEUED\"\n}"
+                            "body": "{\\n  \\\"jobId\\\": \\\"job_1732305698000\\\",\\n  \\\"status\\\": \\\"COMPLETED\\\",\\n  \\\"leadsFound\\\": 15,\\n  \\\"duplicatesSkipped\\\": 3,\\n  \\\"invalidPhonesSkipped\\\": 2,\\n  \\\"totalScraped\\\": 20,\\n  \\\"leads\\\": [\\n    {\\n      \\\"id\\\": \\\"clx123...\\\",\\n      \\\"businessName\\\": \\\"Ama's Beauty Salon\\\",\\n      \\\"phone\\\": \\\"+233244123456\\\",\\n      \\\"category\\\": \\\"hairdressing\\\",\\n      \\\"confidence\\\": 0.85\\n    }\\n  ]\\n}"
                         }
                     ]
                 },
@@ -421,7 +421,7 @@
                         "method": "GET",
                         "header": [],
                         "url": {
-                            "raw": "{{base_url}}/api/v1/osint/leads",
+                            "raw": "{{base_url}}/api/v1/osint/leads?minConfidence=0.60&limit=50&offset=0",
                             "host": [
                                 "{{base_url}}"
                             ],
@@ -430,6 +430,23 @@
                                 "v1",
                                 "osint",
                                 "leads"
+                            ],
+                            "query": [
+                                {
+                                    "key": "minConfidence",
+                                    "value": "0.60",
+                                    "description": "Minimum confidence score (0.0-1.0)"
+                                },
+                                {
+                                    "key": "limit",
+                                    "value": "50",
+                                    "description": "Number of results to return"
+                                },
+                                {
+                                    "key": "offset",
+                                    "value": "0",
+                                    "description": "Offset for pagination"
+                                }
                             ]
                         },
                         "description": "Retrieve collected business leads from OSINT scraping operations."
