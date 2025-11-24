@@ -32,7 +32,7 @@ export const checkTinStatus = async (req: Request, res: Response) => {
     }
 
     // Find user in mock data
-    const user = findUserByNationalId(nationalId, yearOfBirth);
+    const user = await findUserByNationalId(nationalId, yearOfBirth);
 
     if (!user) {
       return res.status(404).json({
@@ -88,7 +88,7 @@ export const getUserDetails = async (req: Request, res: Response) => {
     }
 
     // Find user
-    const user = findUserByNationalId(nationalId, yearOfBirth);
+    const user = await findUserByNationalId(nationalId, yearOfBirth);
 
     if (!user) {
       return res.status(404).json({
@@ -138,7 +138,7 @@ export const registerTin = async (req: Request, res: Response) => {
     }
 
     // Check if user exists first
-    const existingUser = findUserByNationalId(nationalId, yearOfBirth);
+    const existingUser = await findUserByNationalId(nationalId, yearOfBirth);
     if (!existingUser) {
       return res.status(404).json({
         success: false,
@@ -156,7 +156,7 @@ export const registerTin = async (req: Request, res: Response) => {
     }
 
     // Assign TIN
-    const newTin = assignTinToUser(nationalId, firstName, yearOfBirth);
+    const newTin = await assignTinToUser(nationalId, firstName, yearOfBirth);
 
     if (!newTin) {
       return res.status(500).json({
@@ -203,7 +203,7 @@ export const registerTot = async (req: Request, res: Response) => {
     }
 
     // Find user
-    const user = findUserByNationalId(nationalId, yearOfBirth);
+    const user = await findUserByNationalId(nationalId, yearOfBirth);
 
     if (!user) {
       return res.status(404).json({
@@ -221,7 +221,7 @@ export const registerTot = async (req: Request, res: Response) => {
     }
 
     // Check if already registered for ToT
-    const totStatus = getUserTotStatus(nationalId, yearOfBirth);
+    const totStatus = await getUserTotStatus(nationalId, yearOfBirth);
     if (totStatus.registered) {
       return res.status(400).json({
         success: false,
@@ -231,7 +231,7 @@ export const registerTot = async (req: Request, res: Response) => {
     }
 
     // Register for ToT
-    const registered = registerUserForTot(nationalId, yearOfBirth);
+    const registered = await registerUserForTot(nationalId, yearOfBirth);
 
     if (!registered) {
       return res.status(500).json({
@@ -279,7 +279,7 @@ export const getTotStatus = async (req: Request, res: Response) => {
     }
 
     // Find user
-    const user = findUserByNationalId(nationalId, yearOfBirth);
+    const user = await findUserByNationalId(nationalId, yearOfBirth);
 
     if (!user) {
       return res.status(404).json({
@@ -289,7 +289,7 @@ export const getTotStatus = async (req: Request, res: Response) => {
       });
     }
 
-    const totStatus = getUserTotStatus(nationalId, yearOfBirth);
+    const totStatus = await getUserTotStatus(nationalId, yearOfBirth);
 
     return res.json({
       success: true,
@@ -341,7 +341,7 @@ export const getAvailablePeriods = async (req: Request, res: Response) => {
     }
 
     // Check if user exists and has ToT registration
-    const user = findUserByNationalId(nationalId, yearOfBirth);
+    const user = await findUserByNationalId(nationalId, yearOfBirth);
     if (!user) {
       return res.status(404).json({
         success: false,
@@ -357,7 +357,7 @@ export const getAvailablePeriods = async (req: Request, res: Response) => {
     }
 
     // Get available periods
-    const periods = getAvailablePeriodsForUser(nationalId, yearOfBirth, filingType as FilingType);
+    const periods = await getAvailablePeriodsForUser(nationalId, yearOfBirth, filingType as FilingType);
 
     return res.json({
       success: true,
@@ -448,7 +448,7 @@ export const fileReturn = async (req: Request, res: Response) => {
     }
 
     // Check if user exists and is registered for ToT
-    const user = findUserByNationalId(nationalId, yearOfBirth);
+    const user = await findUserByNationalId(nationalId, yearOfBirth);
     if (!user) {
       return res.status(404).json({
         success: false,
@@ -464,7 +464,7 @@ export const fileReturn = async (req: Request, res: Response) => {
     }
 
     // File the return
-    const filingRecord = fileNewReturn(nationalId, yearOfBirth, grossSales, filingType as FilingType, filingPeriod);
+    const filingRecord = await fileNewReturn(nationalId, yearOfBirth, grossSales, filingType as FilingType, filingPeriod);
 
     if (!filingRecord) {
       return res.status(400).json({
@@ -518,7 +518,7 @@ export const getFilingHistory = async (req: Request, res: Response) => {
     }
 
     // Check if user exists
-    const user = findUserByNationalId(nationalId, yearOfBirth);
+    const user = await findUserByNationalId(nationalId, yearOfBirth);
     if (!user) {
       return res.status(404).json({
         success: false,
@@ -527,7 +527,7 @@ export const getFilingHistory = async (req: Request, res: Response) => {
     }
 
     // Get filing history
-    const filings = getFilingHistoryForUser(nationalId, yearOfBirth);
+    const filings = await getFilingHistoryForUser(nationalId, yearOfBirth);
 
     return res.json({
       success: true,

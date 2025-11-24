@@ -103,42 +103,150 @@ export const mockUsers: MockUser[] = baseTestData.map((data, index) => {
   };
 });
 
+// Import Prisma for database operations
+import prisma from './prisma.service';
+
 // Helper functions for mock data operations
-export const findUserByNationalId = (nationalId: string, yearOfBirth: string): MockUser | undefined => {
-  return mockUsers.find(user => {
+export const findUserByNationalId = async (nationalId: string, yearOfBirth: string): Promise<MockUser | null> => {
+  // First, check mock data
+  const mockUser = mockUsers.find(user => {
     const userYear = new Date(user.dateOfBirth).getFullYear().toString();
     return user.nationalId === nationalId && userYear === yearOfBirth;
   });
-};
-
-export const assignTinToUser = (nationalId: string, firstName: string, yearOfBirth: string): string | null => {
-  const user = findUserByNationalId(nationalId, yearOfBirth);
-  if (!user) return null;
   
-  // Update first name if provided
-  if (firstName) {
-    user.firstName = firstName;
+  if (mockUser) {
+    return mockUser;
   }
   
-  // Generate and assign TIN
-  const newTin = generateTin();
-  user.tinNumber = newTin;
+  // If not in mock data, check database
+  try {
+    const dbUser = await prisma.user.findFirst({
+      where: {
+        nationalId: nationalId,
+        dateOfBirth: {
+          gte: new Date(`${yearOfBirth}-01-01`),
+          lt: new Date(`${parseInt(yearOfBirth) + 1}-01-01`)
+        }
+      }
+    });
+    
+    if (dbUser) {
+      // Convert database user to MockUser format
+      return {
+        nationalId: dbUser.nationalId!,
+        dateOfBirth: dbUser.dateOfBirth!.toISOString().split('T')[0],
+        firstName: dbUser.firstName,
+        lastName: dbUser.lastName,
+        tinNumber: dbUser.tinNumber || undefined,
+        totRegistered: dbUser.totRegistered,
+        totRegistrationDate: dbUser.totRegistrationDate?.toISOString()
+      };
+    }
+  } catch (error) {
+    console.error('Database error in findUserByNationalId:', error);
+  }
   
-  return newTin;
+  return null;
 };
 
-export const registerUserForTot = (nationalId: string, yearOfBirth: string): boolean => {
-  const user = findUserByNationalId(nationalId, yearOfBirth);
+export const assignTinToUser = async (nationalId: string, firstName: string, yearOfBirth: string): Promise<string | null> => {
+  const user = await findUserByNationalId(nationalId, yearOfBirth);
+  
+  // If user not found in mock or database, create new user in database
+  if (!user) {
+    try {
+      const newTin = generateTin();
+      const dateOfBirth = new Date(`${yearOfBirth}-01-01`);
+      
+      await prisma.user.create({
+        data: {
+          nationalId,
+          dateOfBirth,
+          firstName,
+          lastName: '', // Will be updated later if needed
+          phoneNumber: `+233${Math.floor(Math.random() * 1000000000)}`, // Temporary unique phone
+          tinNumber: newTin,
+          totRegistered: false
+        }
+      });
+      
+      return newTin;
+    } catch (error) {
+      console.error('Error creating user in database:', error);
+      return null;
+    }
+  }
+  
+  // Check if user is from mock data
+  const isMockUser = mockUsers.some(u => u.nationalId === nationalId);
+  
+  if (isMockUser) {
+    // Update mock user
+    const mockUser = mockUsers.find(u => u.nationalId === nationalId);
+    if (mockUser) {
+      if (firstName) mockUser.firstName = firstName;
+      const newTin = generateTin();
+      mockUser.tinNumber = newTin;
+      return newTin;
+    }
+  } else {
+    // Update database user
+    try {
+      const newTin = generateTin();
+      await prisma.user.update({
+        where: { nationalId },
+        data: {
+          tinNumber: newTin,
+          firstName: firstName || user.firstName
+        }
+      });
+      return newTin;
+    } catch (error) {
+      console.error('Error updating user TIN in database:', error);
+      return null;
+    }
+  }
+  
+  return null;
+};
+
+export const registerUserForTot = async (nationalId: string, yearOfBirth: string): Promise<boolean> => {
+  const user = await findUserByNationalId(nationalId, yearOfBirth);
   if (!user || !user.tinNumber) return false;
   
-  user.totRegistered = true;
-  user.totRegistrationDate = new Date().toISOString();
+  // Check if user is from mock data
+  const isMockUser = mockUsers.some(u => u.nationalId === nationalId);
   
-  return true;
+  if (isMockUser) {
+    // Update mock user
+    const mockUser = mockUsers.find(u => u.nationalId === nationalId);
+    if (mockUser) {
+      mockUser.totRegistered = true;
+      mockUser.totRegistrationDate = new Date().toISOString();
+      return true;
+    }
+  } else {
+    // Update database user
+    try {
+      await prisma.user.update({
+        where: { nationalId },
+        data: {
+          totRegistered: true,
+          totRegistrationDate: new Date()
+        }
+      });
+      return true;
+    } catch (error) {
+      console.error('Error registering user for ToT in database:', error);
+      return false;
+    }
+  }
+  
+  return false;
 };
 
-export const getUserTotStatus = (nationalId: string, yearOfBirth: string): { registered: boolean; date?: string } => {
-  const user = findUserByNationalId(nationalId, yearOfBirth);
+export const getUserTotStatus = async (nationalId: string, yearOfBirth: string): Promise<{ registered: boolean; date?: string }> => {
+  const user = await findUserByNationalId(nationalId, yearOfBirth);
   if (!user) return { registered: false };
   
   return {
@@ -225,11 +333,11 @@ export const generateMonthlyPeriods = (): string[] => {
 };
 
 // Get available periods for a user (excluding already filed periods)
-export const getAvailablePeriodsForUser = (
+export const getAvailablePeriodsForUser = async (
   nationalId: string,
   yearOfBirth: string,
   filingType: FilingType
-): string[] => {
+): Promise<string[]> => {
   // Get user's filed periods
   const userFilings = filingRecords.filter(
     record => record.nationalId === nationalId && record.filingType === filingType
@@ -259,14 +367,14 @@ export const isPeriodFiled = (
 };
 
 // File a new return
-export const fileNewReturn = (
+export const fileNewReturn = async (
   nationalId: string,
   yearOfBirth: string,
   grossSales: number,
   filingType: FilingType,
   filingPeriod: string
-): FilingRecord | null => {
-  const user = findUserByNationalId(nationalId, yearOfBirth);
+): Promise<FilingRecord | null> => {
+  const user = await findUserByNationalId(nationalId, yearOfBirth);
   
   if (!user || !user.tinNumber) return null;
   
@@ -300,11 +408,11 @@ export const fileNewReturn = (
 };
 
 // Get filing history for a user
-export const getFilingHistoryForUser = (
+export const getFilingHistoryForUser = async (
   nationalId: string,
   yearOfBirth: string
-): FilingRecord[] => {
-  const user = findUserByNationalId(nationalId, yearOfBirth);
+): Promise<FilingRecord[]> => {
+  const user = await findUserByNationalId(nationalId, yearOfBirth);
   if (!user) return [];
   
   return filingRecords

@@ -39,6 +39,12 @@ model User {
   registrationDate    DateTime  @default(now())
   isVerified          Boolean   @default(false)
   
+  // ToT (Turnover Tax) Registration Fields
+  nationalId          String?   @unique // National ID number for ToT registration
+  dateOfBirth         DateTime? // For National ID validation
+  totRegistered       Boolean   @default(false) // ToT registration status
+  totRegistrationDate DateTime? // When user registered for ToT
+  
   // Metadata
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
