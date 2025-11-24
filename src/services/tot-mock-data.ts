@@ -197,7 +197,7 @@ export const assignTinToUser = async (nationalId: string, firstName: string, yea
         where: { nationalId },
         data: {
           tinNumber: newTin,
-          firstName: firstName || user.firstName
+          firstName: firstName
         }
       });
       return newTin;

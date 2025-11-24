@@ -410,7 +410,11 @@ export const getTotStatus = async (req: Request, res: Response) => {
  */
 export const getAvailablePeriods = async (req: Request, res: Response) => {
   try {
-    const { nationalId, yearOfBirth, filingType } = req.body;
+    const { nationalId, yearOfBirth } = req.body;
+
+    let filingType = req.body.filingType;
+
+    filingType = filingType.toUpperCase();
 
     // Validation
     if (!nationalId || !yearOfBirth || !filingType) {
