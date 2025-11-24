@@ -7,10 +7,12 @@ import { downloadAudio, audioToBase64, cleanupAudioFile, getMimeType } from '../
 type WorkflowIntent = "TRANSACTION" | "REGISTER" | "INFO" | "TAX_FILING";
 
 interface TransactionData {
-      type: "INCOME" | "EXPENSE";
+      type: "INCOME" | "EXPENSE" | "TAX";
       category: string;
       amount: number;
       currency: string;
+      item?: string;
+      units?: string;
       description?: string;
 }
 
@@ -74,12 +76,21 @@ export const processInput = async (req: Request, res: Response) => {
         {
           "intent": "TRANSACTION" | "REGISTER" | "INFO" | "TAX_FILING",
           "data": {
-             // For TRANSACTION or TAX_FILING, extract:
+             // For TRANSACTION, extract:
              "type": "INCOME" or "EXPENSE" (default EXPENSE),
              "category": "Sales", "Transport", "Food", etc.,
              "amount": number (0 if not found),
              "currency": "GHS",
-             "description": "Short summary of the item/service"
+             "item": "What item/service (e.g., 'rice', 'transport', 'airtime')",
+             "units": "Quantity with unit (e.g., '5 bags', '1 trip', '2 pieces')",
+             "description": "Short summary of the transaction"
+             
+             // For TAX_FILING, extract:
+             "type": "TAX",
+             "category": "Type of tax (e.g., 'Income Tax', 'VAT', 'Property Tax')",
+             "amount": number,
+             "currency": "GHS",
+             "description": "Short summary"
           },
           "reply": "A short, friendly response to the user based on their intent (max 1 sentence)."
         }
@@ -176,7 +187,10 @@ export const processInput = async (req: Request, res: Response) => {
 
     switch (extractedData.intent) {
       case 'TRANSACTION':
-        replyText = `✅ Recorded: ${extractedData.data.type} ${extractedData.data.category} - ${extractedData.data.amount} ${extractedData.data.currency}. Is this correct?`;
+        const itemInfo = extractedData.data.item && extractedData.data.units 
+          ? `${extractedData.data.units} of ${extractedData.data.item} - ` 
+          : '';
+        replyText = `✅ Recorded: ${extractedData.data.type} ${extractedData.data.category} - ${itemInfo}${extractedData.data.amount} ${extractedData.data.currency}. Is this correct?`;
         requiresConfirmation = true;
         break;
       
@@ -245,6 +259,8 @@ export const confirmTransaction = async (req: Request, res: Response) => {
           category: dataToSave.category,
           amount: dataToSave.amount,
           currency: dataToSave.currency || "GHS",
+          item: dataToSave.item,
+          units: dataToSave.units,
           rawText: dataToSave.description,
           confidenceScore: 1.0
         }
