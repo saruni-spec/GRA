@@ -1,6 +1,7 @@
 import axios from 'axios';
 import * as fs from 'fs';
 import * as path from 'path';
+import * as os from 'os';
 import { promisify } from 'util';
 
 const writeFile = promisify(fs.writeFile);
@@ -15,11 +16,8 @@ export async function downloadAudio(audioUrl: string): Promise<string> {
   try {
     console.log(`Downloading audio from: ${audioUrl}`);
     
-    // Create temp directory if it doesn't exist
-    const tempDir = path.join(process.cwd(), 'temp');
-    if (!fs.existsSync(tempDir)) {
-      fs.mkdirSync(tempDir, { recursive: true });
-    }
+    // Use system temp directory (works on Vercel)
+    const tempDir = os.tmpdir();
     
     // Generate unique filename
     const filename = `audio_${Date.now()}.ogg`;
