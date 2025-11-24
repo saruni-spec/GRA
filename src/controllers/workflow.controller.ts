@@ -3,6 +3,23 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 import prisma from '../services/prisma.service';
 import { downloadAudio, audioToBase64, cleanupAudioFile, getMimeType } from '../services/audio.service';
 
+// 2. AI Logic (Gemini 2.0 Flash)
+type WorkflowIntent = "TRANSACTION" | "REGISTER" | "INFO" | "TAX_FILING";
+
+interface TransactionData {
+      type: "INCOME" | "EXPENSE";
+      category: string;
+      amount: number;
+      currency: string;
+      description?: string;
+}
+
+interface ExtractedData {
+      intent: WorkflowIntent;
+      data: TransactionData;
+      reply?: string;
+}
+
 // Initialize Gemini
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
 const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
@@ -26,27 +43,48 @@ export const processInput = async (req: Request, res: Response) => {
       console.log(`Created new user: ${phoneNumber}`);
     }
 
-    // 2. AI Logic (Gemini 2.0 Flash)
-    let extractedData = {
-      type: "EXPENSE" as "INCOME" | "EXPENSE",
-      category: "Uncategorized",
-      amount: 0,
-      currency: "GHS"
+    
+
+    let extractedData: ExtractedData = {
+      intent: "TRANSACTION",
+      data: {
+        type: "EXPENSE",
+        category: "Uncategorized",
+        amount: 0,
+        currency: "GHS"
+      }
     };
 
     let transcribedText = "";
 
     try {
       const prompt = `
-        You are a bookkeeping assistant for an informal business in Ghana.
-        Analyze the following input and extract the transaction details.
-        Return ONLY a JSON object with the following keys:
-        - type: "INCOME" or "EXPENSE"
-        - category: A short category name (e.g., "Sales", "Transport", "Food", "Inventory")
-        - amount: The numeric amount (number only)
-        - currency: The currency code (default "GHS")
+        You are a smart assistant for an informal business in Ghana.
+        Analyze the input and classify the user's INTENT.
         
-        JSON Response:
+        Possible Intents:
+        1. TRANSACTION: Recording a sale, expense, or payment.
+        2. REGISTER: User wants to register their business or update details.
+        3. INFO: User is asking for information (e.g., "How do I pay taxes?", "What is my profit?").
+        4. TAX_FILING: User wants to file taxes or declares tax-related info.
+
+        Return ONLY a JSON object.
+        
+        Structure:
+        {
+          "intent": "TRANSACTION" | "REGISTER" | "INFO" | "TAX_FILING",
+          "data": {
+             // For TRANSACTION or TAX_FILING, extract:
+             "type": "INCOME" or "EXPENSE" (default EXPENSE),
+             "category": "Sales", "Transport", "Food", etc.,
+             "amount": number (0 if not found),
+             "currency": "GHS",
+             "description": "Short summary of the item/service"
+          },
+          "reply": "A short, friendly response to the user based on their intent (max 1 sentence)."
+        }
+        
+        Input to analyze:
       `;
 
       // Handle AUDIO input
@@ -85,12 +123,12 @@ export const processInput = async (req: Request, res: Response) => {
         const jsonString = text.replace(/```json/g, '').replace(/```/g, '').trim();
         extractedData = JSON.parse(jsonString);
         
-        transcribedText = `[Audio transcribed and processed]`;
+        transcribedText = `[Audio processed]`;
         
       } 
       // Handle TEXT input
       else if (inputType === 'TEXT' && content) {
-        const fullPrompt = prompt + `\nInput Text: "${content}"`;
+        const fullPrompt = prompt + `\n"${content}"`;
         
         const result = await model.generateContent(fullPrompt);
         const response = await result.response;
@@ -112,9 +150,12 @@ export const processInput = async (req: Request, res: Response) => {
       // Fallback to basic regex if AI fails (only works for text)
       if (inputType === 'TEXT' && content) {
         const text = content.toLowerCase();
-        if (text.match(/(sold|sale|sell|received|income)/)) extractedData.type = "INCOME";
+        extractedData.intent = "TRANSACTION"; // Default fallback
+        if (text.match(/(sold|sale|sell|received|income)/)) extractedData.data.type = "INCOME";
+        else extractedData.data.type = "EXPENSE";
+        
         const amountMatch = text.match(/(\d+(\.\d{1,2})?)/);
-        if (amountMatch) extractedData.amount = parseFloat(amountMatch[0]);
+        if (amountMatch) extractedData.data.amount = parseFloat(amountMatch[0]);
         transcribedText = content;
       } else {
         // For audio, we can't fallback - re-throw the error
@@ -129,11 +170,42 @@ export const processInput = async (req: Request, res: Response) => {
     
     console.log(`Processed ${inputType} input for ${phoneNumber}: ${transcribedText} -> ${JSON.stringify(extractedData)}`);
 
+    // 3. Handle Intents
+    let replyText = extractedData.reply || "Processed.";
+    let requiresConfirmation = false;
+
+    switch (extractedData.intent) {
+      case 'TRANSACTION':
+        replyText = `✅ Recorded: ${extractedData.data.type} ${extractedData.data.category} - ${extractedData.data.amount} ${extractedData.data.currency}. Is this correct?`;
+        requiresConfirmation = true;
+        break;
+      
+      case 'TAX_FILING':
+        replyText = `📋 Tax Filing Initiated: ${extractedData.data.category} - ${extractedData.data.amount} ${extractedData.data.currency}. Shall we proceed?`;
+        requiresConfirmation = true;
+        break;
+
+      case 'REGISTER':
+        replyText = "📝 To register, please provide your full name and business location.";
+        requiresConfirmation = false;
+        break;
+
+      case 'INFO':
+        // Use the AI generated reply or a default
+        if (!replyText) replyText = "Here is the information you requested.";
+        requiresConfirmation = false;
+        break;
+        
+      default:
+        replyText = "I'm not sure I understood. Could you repeat that?";
+        requiresConfirmation = false;
+    }
+
     res.status(200).json({
       status: "SUCCESS",
-      replyText: `✅ Recorded: ${extractedData.type} ${extractedData.category} - ${extractedData.amount} ${extractedData.currency}. Is this correct?`,
-      requiresConfirmation: true,
-      extractedData,
+      replyText,
+      requiresConfirmation,
+      extractedData, // Return full structure including intent and data
       transcribedText: inputType === 'AUDIO' ? transcribedText : undefined
     });
   } catch (error) {
@@ -162,15 +234,18 @@ export const confirmTransaction = async (req: Request, res: Response) => {
         return res.status(404).json({ error: "User not found" });
       }
 
+      // Handle new structure where data is nested in 'data' property
+      const dataToSave: TransactionData = transactionData;
+
       // 2. Save Transaction
       const transaction = await prisma.transaction.create({
         data: {
           userId: user.id,
-          type: transactionData.type,
-          category: transactionData.category,
-          amount: transactionData.amount,
-          currency: transactionData.currency || "GHS",
-          rawText: "Workflow Entry",
+          type: dataToSave.type,
+          category: dataToSave.category,
+          amount: dataToSave.amount,
+          currency: dataToSave.currency || "GHS",
+          rawText: dataToSave.description,
           confidenceScore: 1.0
         }
       });
