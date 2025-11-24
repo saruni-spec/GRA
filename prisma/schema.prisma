@@ -16,8 +16,8 @@ model User {
   id           String        @id @default(uuid())
   
   // Personal Information
-  firstName    String
-  lastName     String
+  firstName    String?
+  lastName     String?
   email        String?       @unique
   phoneNumber  String        @unique // E.164 format (e.g., +233...)
   

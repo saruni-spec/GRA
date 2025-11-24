@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import {
+  registerUser,
   checkTinStatus,
   getUserDetails,
   registerTin,
@@ -13,6 +14,9 @@ import {
 } from '../controllers/tot.controller';
 
 const router = Router();
+
+// POST /api/v1/tot/register-user - Register a new user
+router.post('/register-user', registerUser);
 
 // POST /api/v1/tot/check-tin - Check if user has TIN
 router.post('/check-tin', checkTinStatus);

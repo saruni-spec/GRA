@@ -135,8 +135,8 @@ export const findUserByNationalId = async (nationalId: string, yearOfBirth: stri
       return {
         nationalId: dbUser.nationalId!,
         dateOfBirth: dbUser.dateOfBirth!.toISOString().split('T')[0],
-        firstName: dbUser.firstName,
-        lastName: dbUser.lastName,
+        firstName: dbUser.firstName || '',
+        lastName: dbUser.lastName || '',
         tinNumber: dbUser.tinNumber || undefined,
         totRegistered: dbUser.totRegistered,
         totRegistrationDate: dbUser.totRegistrationDate?.toISOString()

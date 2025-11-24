@@ -13,6 +13,96 @@ import {
   getFilingHistoryForUser,
   getReturnByPRN
 } from '../services/tot-mock-data';
+import prisma from '../services/prisma.service';
+
+/**
+ * Register a new user with National ID, Phone Number, and Year of Birth
+ * POST /api/v1/tot/register-user
+ * Body: { nationalId: string, phoneNumber: string, yearOfBirth: string }
+ */
+export const registerUser = async (req: Request, res: Response) => {
+  try {
+    const { nationalId, phoneNumber, yearOfBirth } = req.body;
+
+    // Validation
+    if (!nationalId || !phoneNumber || !yearOfBirth) {
+      return res.status(400).json({
+        success: false,
+        error: 'National ID, Phone Number, and Year of Birth are required'
+      });
+    }
+
+    // Validate phone number format (basic check)
+    if (!phoneNumber.startsWith('+233') && !phoneNumber.startsWith('0')) {
+      return res.status(400).json({
+        success: false,
+        error: 'Phone number must be a valid Ghanaian number (starting with +233 or 0)'
+      });
+    }
+
+    // Normalize phone number to E.164 format
+    let normalizedPhone = phoneNumber;
+    if (phoneNumber.startsWith('0')) {
+      normalizedPhone = '+233' + phoneNumber.substring(1);
+    }
+
+    // Check if user already exists with this national ID
+    const existingUser = await prisma.user.findUnique({
+      where: { nationalId }
+    });
+
+    if (existingUser) {
+      return res.status(400).json({
+        success: false,
+        error: 'User with this National ID already exists',
+        userId: existingUser.id
+      });
+    }
+
+    // Check if phone number is already in use
+    const phoneExists = await prisma.user.findUnique({
+      where: { phoneNumber: normalizedPhone }
+    });
+
+    if (phoneExists) {
+      return res.status(400).json({
+        success: false,
+        error: 'Phone number is already registered'
+      });
+    }
+
+    // Create user in database
+    const dateOfBirth = new Date(`${yearOfBirth}-01-01`);
+    const newUser = await prisma.user.create({
+      data: {
+        nationalId,
+        phoneNumber: normalizedPhone,
+        dateOfBirth,
+        firstName: '', // Optional, can be updated later
+        lastName: '', // Optional, can be updated later
+        totRegistered: false
+      }
+    });
+
+    return res.status(201).json({
+      success: true,
+      message: '✅ User registered successfully! You can now proceed with TIN registration.',
+      user: {
+        id: newUser.id,
+        nationalId: newUser.nationalId,
+        phoneNumber: newUser.phoneNumber,
+        yearOfBirth: yearOfBirth,
+        createdAt: newUser.createdAt
+      }
+    });
+  } catch (error) {
+    console.error('Error in registerUser:', error);
+    return res.status(500).json({
+      success: false,
+      error: 'Internal server error'
+    });
+  }
+};
 
 /**
  * Check if a user has a TIN based on National ID and Year of Birth
