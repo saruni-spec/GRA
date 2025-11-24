@@ -7,6 +7,7 @@ import authRoutes from './routes/auth.routes';
 import workflowRoutes from './routes/workflow.routes';
 import osintRoutes from './routes/osint.routes';
 import reportsRoutes from './routes/reports.routes';
+import totRoutes from './routes/tot.routes';
 import prisma from './services/prisma.service';
 
 
@@ -31,6 +32,7 @@ app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/workflow', workflowRoutes);
 app.use('/api/v1/osint', osintRoutes);
 app.use('/api/v1/reports', reportsRoutes);
+app.use('/api/v1/tot', totRoutes);
 
 
 // Test endpoint
