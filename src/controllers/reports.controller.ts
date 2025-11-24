@@ -3,7 +3,19 @@ import prisma from '../services/prisma.service';
 
 export const getDailySummary = async (req: Request, res: Response) => {
   try {
-    const { userId } = req.params;
+    const { phoneNumber } = req.params;
+    
+    // Find user by phone number
+    const user = await prisma.user.findUnique({
+      where: { phoneNumber }
+    });
+
+    if (!user) {
+      return res.status(404).json({ 
+        error: 'User not found with this phone number',
+        phoneNumber 
+      });
+    }
     
     // Get start and end of today
     const startOfDay = new Date();
@@ -15,7 +27,7 @@ export const getDailySummary = async (req: Request, res: Response) => {
     // Fetch transactions for today
     const transactions = await prisma.transaction.findMany({
       where: {
-        userId: userId,
+        userId: user.id,
         createdAt: {
           gte: startOfDay,
           lte: endOfDay
@@ -53,10 +65,22 @@ export const getDailySummary = async (req: Request, res: Response) => {
 
 export const getTransactions = async (req: Request, res: Response) => {
   try {
-    const { userId } = req.params;
+    const { phoneNumber } = req.params;
+
+    // Find user by phone number
+    const user = await prisma.user.findUnique({
+      where: { phoneNumber }
+    });
+
+    if (!user) {
+      return res.status(404).json({ 
+        error: 'User not found with this phone number',
+        phoneNumber 
+      });
+    }
 
     const transactions = await prisma.transaction.findMany({
-      where: { userId: userId },
+      where: { userId: user.id },
       orderBy: { createdAt: 'desc' },
       take: 50
     });
