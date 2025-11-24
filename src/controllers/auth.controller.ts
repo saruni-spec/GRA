@@ -252,3 +252,42 @@ export const getUserProfile = async (req: Request, res: Response) => {
     });
   }
 };
+
+
+
+/**
+ * Get user profile by whatsapp number
+ */
+export const getUserProfileByPhone = async (req: Request, res: Response) => {
+  try {
+    const { phone } = req.params;
+
+    const user = await prisma.user.findUnique({
+      where: { phoneNumber:phone },
+      include: {
+        transactions: {
+          take: 10,
+          orderBy: { createdAt: 'desc' }
+        }
+      }
+    });
+
+    if (!user) {
+      return res.status(404).json({
+        error: 'User Not Found',
+        message: 'No user found with the provided ID'
+      });
+    }
+
+    res.status(200).json({
+      status: 'SUCCESS',
+      user
+    });
+  } catch (error) {
+    console.error('Error in getUserProfile:', error);
+    res.status(500).json({ 
+      error: 'Internal Server Error',
+      message: 'Failed to retrieve user profile'
+    });
+  }
+};
