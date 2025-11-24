@@ -25,6 +25,8 @@ export const registerUser = async (req: Request, res: Response) => {
       tinNumber
     } = req.body;
 
+    console.log(req.body);
+
     // Validate required fields
     if (!firstName || !lastName || !phoneNumber) {
       return res.status(400).json({

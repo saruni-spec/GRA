@@ -34,10 +34,11 @@ export const registerUser = async (req: Request, res: Response) => {
 
     // Validate phone number format (basic check)
     if (!phoneNumber.startsWith('+233') && !phoneNumber.startsWith('0')) {
-      return res.status(400).json({
-        success: false,
-        error: 'Phone number must be a valid Ghanaian number (starting with +233 or 0)'
-      });
+      // return res.status(400).json({
+      //   success: false,
+      //   error: 'Phone number must be a valid Ghanaian number (starting with +233 or 0)'
+      // });
+      console.log('Phone number must be a valid Ghanaian number (starting with +233 or 0)');
     }
 
     // Normalize phone number to E.164 format
