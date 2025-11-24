@@ -359,6 +359,8 @@ These APIs are designed to be called from WhatsApp Flow screens:
 
 ---
 
+---
+
 ## Future Enhancements
 
 When integrating with real backend services:
@@ -373,9 +375,419 @@ When integrating with real backend services:
 
 ---
 
+# ToT Filing & Payment API Documentation
+
+## Overview
+
+The ToT Filing & Payment APIs support the WhatsApp-based tax filing flow for registered ToT taxpayers. Users can file daily or monthly returns and receive Payment Reference Numbers (PRNs) for tax payments.
+
+## Business Rules
+
+- **ToT Tax Rate**: 3% of gross sales (calculated by backend)
+- **Filing Types**: DAILY or MONTHLY
+- **Duplicate Prevention**: Users can file only once per valid period
+- **ToT Registration Required**: Users must be registered for ToT before filing
+- **Period Management**: System tracks filed periods and prevents duplicates
+
+## Filing Flow Diagram
+
+```mermaid
+flowchart TD
+    A[Taxpayer Validation] --> B{ToT Registered?}
+    B -->|Yes| C[Select Filing Type]
+    B -->|No| Z[Register for ToT First]
+    C --> D{Daily or Monthly?}
+    D -->|Daily| E[Show Last 30 Days]
+    D -->|Monthly| F[Show Last 12 Months]
+    E --> G[Filter Out Filed Periods]
+    F --> G
+    G --> H[User Selects Period]
+    H --> I[Enter Gross Sales]
+    I --> J[Calculate Tax - 3%]
+    J --> K[Preview Details]
+    K --> L[Confirm & File]
+    L --> M[Generate PRN]
+    M --> N[Return Filed Successfully]
+    N --> O[Show Payment Options]
+```
+
+---
+
+## Filing Endpoints
+
+### 6. Get Available Periods
+
+Get list of available filing periods (unfiled periods only).
+
+**Endpoint:** `POST /api/v1/tot/available-periods`
+
+**Request Body:**
+```json
+{
+  "nationalId": "22957832",
+  "yearOfBirth": "1980",
+  "filingType": "DAILY"
+}
+```
+
+**Parameters:**
+- `nationalId` (string, required): User's National ID
+- `yearOfBirth` (string, required): Year of birth (4 digits)
+- `filingType` (string, required): Either "DAILY" or "MONTHLY"
+
+**Response (Daily):**
+```json
+{
+  "success": true,
+  "filingType": "DAILY",
+  "periods": [
+    "24 Nov 2025",
+    "23 Nov 2025",
+    "22 Nov 2025",
+    "21 Nov 2025"
+  ],
+  "totalAvailable": 30
+}
+```
+
+**Response (Monthly):**
+```json
+{
+  "success": true,
+  "filingType": "MONTHLY",
+  "periods": [
+    "November 2025",
+    "October 2025",
+    "September 2025"
+  ],
+  "totalAvailable": 12
+}
+```
+
+**Error Response (Not Registered for ToT):**
+```json
+{
+  "success": false,
+  "error": "User is not registered for ToT. Please register first."
+}
+```
+
+---
+
+### 7. Calculate Tax
+
+Calculate 3% tax on gross sales (preview before filing).
+
+**Endpoint:** `POST /api/v1/tot/calculate-tax`
+
+**Request Body:**
+```json
+{
+  "grossSales": 5000
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "grossSales": 5000,
+  "taxRate": 3,
+  "taxDue": 150,
+  "currency": "GHS"
+}
+```
+
+**Error Response (Invalid Amount):**
+```json
+{
+  "success": false,
+  "error": "Gross Sales must be a positive number"
+}
+```
+
+---
+
+### 8. File Return
+
+File a ToT return and receive Payment Reference Number (PRN).
+
+**Endpoint:** `POST /api/v1/tot/file-return`
+
+**Request Body:**
+```json
+{
+  "nationalId": "22957832",
+  "yearOfBirth": "1980",
+  "grossSales": 5000,
+  "filingType": "DAILY",
+  "filingPeriod": "24 Nov 2025"
+}
+```
+
+**Parameters:**
+- `nationalId` (string, required): User's National ID
+- `yearOfBirth` (string, required): Year of birth
+- `grossSales` (number, required): Gross sales amount in GHS
+- `filingType` (string, required): "DAILY" or "MONTHLY"
+- `filingPeriod` (string, required): Exact period string (e.g., "24 Nov 2025" or "November 2025")
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "✅ Dear Kwame Mensah, Your Turnover Tax return has been filed successfully.",
+  "prn": "GRA-000001",
+  "returnDetails": {
+    "sellerName": "Kwame Mensah",
+    "sellerTin": "TIN12345678",
+    "grossSales": 5000,
+    "filingPeriod": "24 Nov 2025",
+    "filingType": "DAILY",
+    "taxRate": 3,
+    "taxDue": 150,
+    "currency": "GHS",
+    "prn": "GRA-000001",
+    "filedAt": "2025-11-24T14:12:00.000Z",
+    "paymentStatus": "PENDING"
+  }
+}
+```
+
+**Error Response (Duplicate Filing):**
+```json
+{
+  "success": false,
+  "error": "This period (24 Nov 2025) has already been filed. You can file only once per period."
+}
+```
+
+**Error Response (Not Registered):**
+```json
+{
+  "success": false,
+  "error": "User is not registered for ToT. Please register first."
+}
+```
+
+---
+
+### 9. Get Filing History
+
+Retrieve all filed returns for a user.
+
+**Endpoint:** `POST /api/v1/tot/filing-history`
+
+**Request Body:**
+```json
+{
+  "nationalId": "22957832",
+  "yearOfBirth": "1980"
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "totalFilings": 2,
+  "filings": [
+    {
+      "id": "filing-1732456320123-abc123",
+      "grossSales": 150000,
+      "taxDue": 4500,
+      "filingType": "MONTHLY",
+      "filingPeriod": "November 2025",
+      "prn": "GRA-000002",
+      "filedAt": "2025-11-24T15:32:00.000Z",
+      "paymentStatus": "PENDING"
+    },
+    {
+      "id": "filing-1732456200456-xyz789",
+      "grossSales": 5000,
+      "taxDue": 150,
+      "filingType": "DAILY",
+      "filingPeriod": "24 Nov 2025",
+      "prn": "GRA-000001",
+      "filedAt": "2025-11-24T14:12:00.000Z",
+      "paymentStatus": "PENDING"
+    }
+  ]
+}
+```
+
+---
+
+### 10. Get Return Details
+
+Retrieve specific return details using Payment Reference Number (PRN).
+
+**Endpoint:** `POST /api/v1/tot/return-details`
+
+**Request Body:**
+```json
+{
+  "prn": "GRA-000001"
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "found": true,
+  "returnDetails": {
+    "sellerName": "Kwame Mensah",
+    "sellerTin": "TIN12345678",
+    "nationalId": "22957832",
+    "grossSales": 5000,
+    "filingPeriod": "24 Nov 2025",
+    "filingType": "DAILY",
+    "taxRate": 3,
+    "taxDue": 150,
+    "currency": "GHS",
+    "prn": "GRA-000001",
+    "filedAt": "2025-11-24T14:12:00.000Z",
+    "paymentStatus": "PENDING"
+  }
+}
+```
+
+**Error Response (PRN Not Found):**
+```json
+{
+  "success": false,
+  "found": false,
+  "error": "Return not found with the provided PRN"
+}
+```
+
+---
+
+## Complete Filing Flow Examples
+
+### Daily Filing Flow
+
+```bash
+# Step 1: Validate Taxpayer (use existing endpoint)
+curl -X POST http://localhost:3000/api/v1/tot/get-user-details \
+  -H "Content-Type: application/json" \
+  -d '{"nationalId": "22957832", "yearOfBirth": "1980"}'
+
+# Response: Check totRegistered: true
+
+# Step 2: Get Available Daily Periods
+curl -X POST http://localhost:3000/api/v1/tot/available-periods \
+  -H "Content-Type: application/json" \
+  -d '{
+    "nationalId": "22957832",
+    "yearOfBirth": "1980",
+    "filingType": "DAILY"
+  }'
+
+# Response: List of available daily periods
+
+# Step 3: Calculate Tax (Preview)
+curl -X POST http://localhost:3000/api/v1/tot/calculate-tax \
+  -H "Content-Type: application/json" \
+  -d '{"grossSales": 5000}'
+
+# Response: { taxDue: 150, taxRate: 3 }
+
+# Step 4: File Return
+curl -X POST http://localhost:3000/api/v1/tot/file-return \
+  -H "Content-Type: application/json" \
+  -d '{
+    "nationalId": "22957832",
+    "yearOfBirth": "1980",
+    "grossSales": 5000,
+    "filingType": "DAILY",
+    "filingPeriod": "24 Nov 2025"
+  }'
+
+# Response: { success: true, prn: "GRA-000001", taxDue: 150 }
+
+# Step 5: View Filing History
+curl -X POST http://localhost:3000/api/v1/tot/filing-history \
+  -H "Content-Type: application/json" \
+  -d '{"nationalId": "22957832", "yearOfBirth": "1980"}'
+
+# Response: List of all filed returns
+```
+
+### Monthly Filing Flow
+
+```bash
+# Step 1: Get Available Monthly Periods
+curl -X POST http://localhost:3000/api/v1/tot/available-periods \
+  -H "Content-Type: application/json" \
+  -d '{
+    "nationalId": "22957832",
+    "yearOfBirth": "1980",
+    "filingType": "MONTHLY"
+  }'
+
+# Response: List of available monthly periods
+
+# Step 2: File Monthly Return
+curl -X POST http://localhost:3000/api/v1/tot/file-return \
+  -H "Content-Type: application/json" \
+  -d '{
+    "nationalId": "22957832",
+    "yearOfBirth": "1980",
+    "grossSales": 150000,
+    "filingType": "MONTHLY",
+    "filingPeriod": "November 2025"
+  }'
+
+# Response: { success: true, prn: "GRA-000002", taxDue: 4500 }
+```
+
+---
+
+## Filing Integration with WhatsApp Flow
+
+The filing APIs integrate with WhatsApp Flow screens as follows:
+
+1. **Taxpayer Validation Screen** → Calls `POST /get-user-details`
+2. **Filing Type Selection** → User chooses DAILY or MONTHLY
+3. **Period Selection Screen** → Calls `POST /available-periods`
+4. **Sales Entry Screen** → User enters gross sales
+5. **Preview Screen** → Calls `POST /calculate-tax` to show tax calculation
+6. **Confirmation** → Calls `POST /file-return` to submit
+7. **Success Screen** → Shows PRN and payment options
+
+---
+
+## Period Format Reference
+
+### Daily Periods
+- Format: `DD MMM YYYY` (e.g., "24 Nov 2025")
+- Generated: Last 30 days from current date
+- Example: "24 Nov 2025", "23 Nov 2025", "22 Nov 2025"
+
+### Monthly Periods
+- Format: `MMMM YYYY` (e.g., "November 2025")
+- Generated: Last 12 months from current month
+- Example: "November 2025", "October 2025", "September 2025"
+
+---
+
+## Payment Reference Numbers (PRN)
+
+- **Format**: `GRA-XXXXXX` (6-digit sequential number)
+- **Examples**: GRA-000001, GRA-000002, GRA-000003
+- **Uniqueness**: Each filed return gets a unique PRN
+- **Usage**: Used for payment processing and return lookup
+
+---
+
 ## Notes
 
 - All mock data is stored in memory and will reset when the server restarts
 - TIN numbers are auto-generated in the format `TINxxxxxxxx`
 - Year of Birth extracted from `dateOfBirth` field for matching
 - All endpoints use POST method for security (no sensitive data in URLs)
+- Filing records persist in-memory during server session
+- PRN counter resets when server restarts
+- Tax calculation rounds to 2 decimal places
