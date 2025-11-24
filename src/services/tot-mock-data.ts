@@ -99,7 +99,7 @@ export const mockUsers: MockUser[] = baseTestData.map((data, index) => {
     firstName,
     lastName,
     tinNumber: hasTin ? generateTin() : undefined,
-    totRegistered: false
+    totRegistered: hasTin
   };
 });
 
