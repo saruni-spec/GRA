@@ -4,7 +4,14 @@ import {
   assignTinToUser,
   registerUserForTot,
   getUserTotStatus,
-  MockUser
+  MockUser,
+  FilingType,
+  getAvailablePeriodsForUser,
+  calculateTotTax,
+  TOT_TAX_RATE,
+  fileNewReturn,
+  getFilingHistoryForUser,
+  getReturnByPRN
 } from '../services/tot-mock-data';
 
 /**
@@ -298,6 +305,301 @@ export const getTotStatus = async (req: Request, res: Response) => {
     });
   } catch (error) {
     console.error('Error in getTotStatus:', error);
+    return res.status(500).json({
+      success: false,
+      error: 'Internal server error'
+    });
+  }
+};
+
+// ========================================
+// ToT FILING & PAYMENT ENDPOINTS
+// ========================================
+
+/**
+ * Get available filing periods for a user
+ * POST /api/v1/tot/available-periods
+ * Body: { nationalId: string, yearOfBirth: string, filingType: 'DAILY' | 'MONTHLY' }
+ */
+export const getAvailablePeriods = async (req: Request, res: Response) => {
+  try {
+    const { nationalId, yearOfBirth, filingType } = req.body;
+
+    // Validation
+    if (!nationalId || !yearOfBirth || !filingType) {
+      return res.status(400).json({
+        success: false,
+        error: 'National ID, Year of Birth, and Filing Type are required'
+      });
+    }
+
+    if (filingType !== 'DAILY' && filingType !== 'MONTHLY') {
+      return res.status(400).json({
+        success: false,
+        error: 'Filing Type must be either DAILY or MONTHLY'
+      });
+    }
+
+    // Check if user exists and has ToT registration
+    const user = findUserByNationalId(nationalId, yearOfBirth);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        error: 'User not found'
+      });
+    }
+
+    if (!user.totRegistered) {
+      return res.status(400).json({
+        success: false,
+        error: 'User is not registered for ToT. Please register first.'
+      });
+    }
+
+    // Get available periods
+    const periods = getAvailablePeriodsForUser(nationalId, yearOfBirth, filingType as FilingType);
+
+    return res.json({
+      success: true,
+      filingType,
+      periods,
+      totalAvailable: periods.length
+    });
+  } catch (error) {
+    console.error('Error in getAvailablePeriods:', error);
+    return res.status(500).json({
+      success: false,
+      error: 'Internal server error'
+    });
+  }
+};
+
+/**
+ * Calculate ToT tax (3% of gross sales)
+ * POST /api/v1/tot/calculate-tax
+ * Body: { grossSales: number }
+ */
+export const calculateTax = async (req: Request, res: Response) => {
+  try {
+    const { grossSales } = req.body;
+
+    // Validation
+    if (grossSales === undefined || grossSales === null) {
+      return res.status(400).json({
+        success: false,
+        error: 'Gross Sales amount is required'
+      });
+    }
+
+    if (typeof grossSales !== 'number' || grossSales < 0) {
+      return res.status(400).json({
+        success: false,
+        error: 'Gross Sales must be a positive number'
+      });
+    }
+
+    const taxDue = calculateTotTax(grossSales);
+
+    return res.json({
+      success: true,
+      grossSales,
+      taxRate: TOT_TAX_RATE,
+      taxDue,
+      currency: 'GHS'
+    });
+  } catch (error) {
+    console.error('Error in calculateTax:', error);
+    return res.status(500).json({
+      success: false,
+      error: 'Internal server error'
+    });
+  }
+};
+
+/**
+ * File a ToT return
+ * POST /api/v1/tot/file-return
+ * Body: { nationalId, yearOfBirth, grossSales, filingType, filingPeriod }
+ */
+export const fileReturn = async (req: Request, res: Response) => {
+  try {
+    const { nationalId, yearOfBirth, grossSales, filingType, filingPeriod } = req.body;
+
+    // Validation
+    if (!nationalId || !yearOfBirth || grossSales === undefined || !filingType || !filingPeriod) {
+      return res.status(400).json({
+        success: false,
+        error: 'All fields are required: nationalId, yearOfBirth, grossSales, filingType, filingPeriod'
+      });
+    }
+
+    if (filingType !== 'DAILY' && filingType !== 'MONTHLY') {
+      return res.status(400).json({
+        success: false,
+        error: 'Filing Type must be either DAILY or MONTHLY'
+      });
+    }
+
+    if (typeof grossSales !== 'number' || grossSales < 0) {
+      return res.status(400).json({
+        success: false,
+        error: 'Gross Sales must be a positive number'
+      });
+    }
+
+    // Check if user exists and is registered for ToT
+    const user = findUserByNationalId(nationalId, yearOfBirth);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        error: 'User not found'
+      });
+    }
+
+    if (!user.totRegistered) {
+      return res.status(400).json({
+        success: false,
+        error: 'User is not registered for ToT. Please register first.'
+      });
+    }
+
+    // File the return
+    const filingRecord = fileNewReturn(nationalId, yearOfBirth, grossSales, filingType as FilingType, filingPeriod);
+
+    if (!filingRecord) {
+      return res.status(400).json({
+        success: false,
+        error: `This period (${filingPeriod}) has already been filed. You can file only once per period.`
+      });
+    }
+
+    return res.json({
+      success: true,
+      message: `✅ Dear ${filingRecord.firstName} ${filingRecord.lastName}, Your Turnover Tax return has been filed successfully.`,
+      prn: filingRecord.prn,
+      returnDetails: {
+        sellerName: `${filingRecord.firstName} ${filingRecord.lastName}`,
+        sellerTin: filingRecord.tinNumber,
+        grossSales: filingRecord.grossSales,
+        filingPeriod: filingRecord.filingPeriod,
+        filingType: filingRecord.filingType,
+        taxRate: filingRecord.taxRate,
+        taxDue: filingRecord.taxDue,
+        currency: 'GHS',
+        prn: filingRecord.prn,
+        filedAt: filingRecord.filedAt,
+        paymentStatus: filingRecord.paymentStatus
+      }
+    });
+  } catch (error) {
+    console.error('Error in fileReturn:', error);
+    return res.status(500).json({
+      success: false,
+      error: 'Internal server error'
+    });
+  }
+};
+
+/**
+ * Get filing history for a user
+ * POST /api/v1/tot/filing-history
+ * Body: { nationalId: string, yearOfBirth: string }
+ */
+export const getFilingHistory = async (req: Request, res: Response) => {
+  try {
+    const { nationalId, yearOfBirth } = req.body;
+
+    // Validation
+    if (!nationalId || !yearOfBirth) {
+      return res.status(400).json({
+        success: false,
+        error: 'National ID and Year of Birth are required'
+      });
+    }
+
+    // Check if user exists
+    const user = findUserByNationalId(nationalId, yearOfBirth);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        error: 'User not found'
+      });
+    }
+
+    // Get filing history
+    const filings = getFilingHistoryForUser(nationalId, yearOfBirth);
+
+    return res.json({
+      success: true,
+      totalFilings: filings.length,
+      filings: filings.map(f => ({
+        id: f.id,
+        grossSales: f.grossSales,
+        taxDue: f.taxDue,
+        filingType: f.filingType,
+        filingPeriod: f.filingPeriod,
+        prn: f.prn,
+        filedAt: f.filedAt,
+        paymentStatus: f.paymentStatus
+      }))
+    });
+  } catch (error) {
+    console.error('Error in getFilingHistory:', error);
+    return res.status(500).json({
+      success: false,
+      error: 'Internal server error'
+    });
+  }
+};
+
+/**
+ * Get return details by PRN
+ * POST /api/v1/tot/return-details
+ * Body: { prn: string }
+ */
+export const getReturnDetails = async (req: Request, res: Response) => {
+  try {
+    const { prn } = req.body;
+
+    // Validation
+    if (!prn) {
+      return res.status(400).json({
+        success: false,
+        error: 'Payment Reference Number (PRN) is required'
+      });
+    }
+
+    // Get return by PRN
+    const filing = getReturnByPRN(prn);
+
+    if (!filing) {
+      return res.status(404).json({
+        success: false,
+        found: false,
+        error: 'Return not found with the provided PRN'
+      });
+    }
+
+    return res.json({
+      success: true,
+      found: true,
+      returnDetails: {
+        sellerName: `${filing.firstName} ${filing.lastName}`,
+        sellerTin: filing.tinNumber,
+        nationalId: filing.nationalId,
+        grossSales: filing.grossSales,
+        filingPeriod: filing.filingPeriod,
+        filingType: filing.filingType,
+        taxRate: filing.taxRate,
+        taxDue: filing.taxDue,
+        currency: 'GHS',
+        prn: filing.prn,
+        filedAt: filing.filedAt,
+        paymentStatus: filing.paymentStatus
+      }
+    });
+  } catch (error) {
+    console.error('Error in getReturnDetails:', error);
     return res.status(500).json({
       success: false,
       error: 'Internal server error'

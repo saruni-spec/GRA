@@ -1,0 +1,518 @@
+{
+    "info": {
+        "name": "ToT Registration & Filing API",
+        "description": "Mock APIs for Ghana Revenue Authority - Turnover Tax (ToT) Registration & Filing via WhatsApp",
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+        "_exporter_id": "GRA-POC"
+    },
+    "item": [
+        {
+            "name": "1. Registration Flow",
+            "description": "ToT registration with TIN check and assignment",
+            "item": [
+                {
+                    "name": "Branch A - User with TIN",
+                    "description": "Flow for users who already have a TIN",
+                    "item": [
+                        {
+                            "name": "1. Check TIN Status (Has TIN)",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\\n  \\"nationalId\\": \\"22957832\\",\\n  \\"yearOfBirth\\": \\"1980\\"\\n}"
+                                },
+                                "url": {
+                                    "raw": "http://localhost:3000/api/v1/tot/check-tin",
+                                    "protocol": "http",
+                                    "host": [
+                                        "localhost"
+                                    ],
+                                    "port": "3000",
+                                    "path": [
+                                        "api",
+                                        "v1",
+                                        "tot",
+                                        "check-tin"
+                                    ]
+                                },
+                                "description": "Check if user has a TIN. This user should already have a TIN (Branch A)."
+                            }
+                        },
+                        {
+                            "name": "2. Register for ToT",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\\n  \\"nationalId\\": \\"22957832\\",\\n  \\"yearOfBirth\\": \\"1980\\"\\n}"
+                                },
+                                "url": {
+                                    "raw": "http://localhost:3000/api/v1/tot/register-tot",
+                                    "protocol": "http",
+                                    "host": [
+                                        "localhost"
+                                    ],
+                                    "port": "3000",
+                                    "path": [
+                                        "api",
+                                        "v1",
+                                        "tot",
+                                        "register-tot"
+                                    ]
+                                }
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Branch B - User without TIN",
+                    "description": "Flow for users who need to register for a TIN first",
+                    "item": [
+                        {
+                            "name": "1. Check TIN Status (No TIN)",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\\n  \\"nationalId\\": \\"27750418\\",\\n  \\"yearOfBirth\\": \\"1989\\"\\n}"
+                                },
+                                "url": {
+                                    "raw": "http://localhost:3000/api/v1/tot/check-tin",
+                                    "protocol": "http",
+                                    "host": [
+                                        "localhost"
+                                    ],
+                                    "port": "3000",
+                                    "path": [
+                                        "api",
+                                        "v1",
+                                        "tot",
+                                        "check-tin"
+                                    ]
+                                }
+                            }
+                        },
+                        {
+                            "name": "2. Register for TIN",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\\n  \\"nationalId\\": \\"27750418\\",\\n  \\"firstName\\": \\"Kwame\\",\\n  \\"yearOfBirth\\": \\"1989\\"\\n}"
+                                },
+                                "url": {
+                                    "raw": "http://localhost:3000/api/v1/tot/register-tin",
+                                    "protocol": "http",
+                                    "host": [
+                                        "localhost"
+                                    ],
+                                    "port": "3000",
+                                    "path": [
+                                        "api",
+                                        "v1",
+                                        "tot",
+                                        "register-tin"
+                                    ]
+                                }
+                            }
+                        },
+                        {
+                            "name": "3. Register for ToT",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\\n  \\"nationalId\\": \\"27750418\\",\\n  \\"yearOfBirth\\": \\"1989\\"\\n}"
+                                },
+                                "url": {
+                                    "raw": "http://localhost:3000/api/v1/tot/register-tot",
+                                    "protocol": "http",
+                                    "host": [
+                                        "localhost"
+                                    ],
+                                    "port": "3000",
+                                    "path": [
+                                        "api",
+                                        "v1",
+                                        "tot",
+                                        "register-tot"
+                                    ]
+                                }
+                            }
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "2. Filing Flow",
+            "description": "File and pay turnover tax returns",
+            "item": [
+                {
+                    "name": "Daily Filing - Complete Flow",
+                    "description": "Complete flow for filing daily returns",
+                    "item": [
+                        {
+                            "name": "1. Validate Taxpayer",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\\n  \\"nationalId\\": \\"22957832\\",\\n  \\"yearOfBirth\\": \\"1980\\"\\n}"
+                                },
+                                "url": {
+                                    "raw": "http://localhost:3000/api/v1/tot/get-user-details",
+                                    "protocol": "http",
+                                    "host": [
+                                        "localhost"
+                                    ],
+                                    "port": "3000",
+                                    "path": [
+                                        "api",
+                                        "v1",
+                                        "tot",
+                                        "get-user-details"
+                                    ]
+                                },
+                                "description": "Validate user and check ToT registration"
+                            }
+                        },
+                        {
+                            "name": "2. Get Available Daily Periods",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\\n  \\"nationalId\\": \\"22957832\\",\\n  \\"yearOfBirth\\": \\"1980\\",\\n  \\"filingType\\": \\"DAILY\\"\\n}"
+                                },
+                                "url": {
+                                    "raw": "http://localhost:3000/api/v1/tot/available-periods",
+                                    "protocol": "http",
+                                    "host": [
+                                        "localhost"
+                                    ],
+                                    "port": "3000",
+                                    "path": [
+                                        "api",
+                                        "v1",
+                                        "tot",
+                                        "available-periods"
+                                    ]
+                                },
+                                "description": "Get list of available daily periods for filing"
+                            }
+                        },
+                        {
+                            "name": "3. Calculate Tax (Preview)",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\\n  \\"grossSales\\": 5000\\n}"
+                                },
+                                "url": {
+                                    "raw": "http://localhost:3000/api/v1/tot/calculate-tax",
+                                    "protocol": "http",
+                                    "host": [
+                                        "localhost"
+                                    ],
+                                    "port": "3000",
+                                    "path": [
+                                        "api",
+                                        "v1",
+                                        "tot",
+                                        "calculate-tax"
+                                    ]
+                                },
+                                "description": "Calculate 3% tax on gross sales"
+                            }
+                        },
+                        {
+                            "name": "4. File Daily Return",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\\n  \\"nationalId\\": \\"22957832\\",\\n  \\"yearOfBirth\\": \\"1980\\",\\n  \\"grossSales\\": 5000,\\n  \\"filingType\\": \\"DAILY\\",\\n  \\"filingPeriod\\": \\"24 Nov 2025\\"\\n}"
+                                },
+                                "url": {
+                                    "raw": "http://localhost:3000/api/v1/tot/file-return",
+                                    "protocol": "http",
+                                    "host": [
+                                        "localhost"
+                                    ],
+                                    "port": "3000",
+                                    "path": [
+                                        "api",
+                                        "v1",
+                                        "tot",
+                                        "file-return"
+                                    ]
+                                },
+                                "description": "File the return and get PRN"
+                            }
+                        },
+                        {
+                            "name": "5. View Filing History",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\\n  \\"nationalId\\": \\"22957832\\",\\n  \\"yearOfBirth\\": \\"1980\\"\\n}"
+                                },
+                                "url": {
+                                    "raw": "http://localhost:3000/api/v1/tot/filing-history",
+                                    "protocol": "http",
+                                    "host": [
+                                        "localhost"
+                                    ],
+                                    "port": "3000",
+                                    "path": [
+                                        "api",
+                                        "v1",
+                                        "tot",
+                                        "filing-history"
+                                    ]
+                                },
+                                "description": "Get all filed returns for user"
+                            }
+                        },
+                        {
+                            "name": "6. Get Return Details by PRN",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\\n  \\"prn\\": \\"GRA-000001\\"\\n}"
+                                },
+                                "url": {
+                                    "raw": "http://localhost:3000/api/v1/tot/return-details",
+                                    "protocol": "http",
+                                    "host": [
+                                        "localhost"
+                                    ],
+                                    "port": "3000",
+                                    "path": [
+                                        "api",
+                                        "v1",
+                                        "tot",
+                                        "return-details"
+                                    ]
+                                },
+                                "description": "Get specific return details using PRN"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Monthly Filing - Complete Flow",
+                    "description": "Complete flow for filing monthly returns",
+                    "item": [
+                        {
+                            "name": "1. Get Available Monthly Periods",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\\n  \\"nationalId\\": \\"22957832\\",\\n  \\"yearOfBirth\\": \\"1980\\",\\n  \\"filingType\\": \\"MONTHLY\\"\\n}"
+                                },
+                                "url": {
+                                    "raw": "http://localhost:3000/api/v1/tot/available-periods",
+                                    "protocol": "http",
+                                    "host": [
+                                        "localhost"
+                                    ],
+                                    "port": "3000",
+                                    "path": [
+                                        "api",
+                                        "v1",
+                                        "tot",
+                                        "available-periods"
+                                    ]
+                                }
+                            }
+                        },
+                        {
+                            "name": "2. File Monthly Return",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\\n  \\"nationalId\\": \\"22957832\\",\\n  \\"yearOfBirth\\": \\"1980\\",\\n  \\"grossSales\\": 150000,\\n  \\"filingType\\": \\"MONTHLY\\",\\n  \\"filingPeriod\\": \\"November 2025\\"\\n}"
+                                },
+                                "url": {
+                                    "raw": "http://localhost:3000/api/v1/tot/file-return",
+                                    "protocol": "http",
+                                    "host": [
+                                        "localhost"
+                                    ],
+                                    "port": "3000",
+                                    "path": [
+                                        "api",
+                                        "v1",
+                                        "tot",
+                                        "file-return"
+                                    ]
+                                }
+                            }
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "3. Error Scenarios",
+            "description": "Test duplicate filing and validation",
+            "item": [
+                {
+                    "name": "Duplicate Filing - Same Period",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\\n  \\"nationalId\\": \\"22957832\\",\\n  \\"yearOfBirth\\": \\"1980\\",\\n  \\"grossSales\\": 5000,\\n  \\"filingType\\": \\"DAILY\\",\\n  \\"filingPeriod\\": \\"24 Nov 2025\\"\\n}"
+                        },
+                        "url": {
+                            "raw": "http://localhost:3000/api/v1/tot/file-return",
+                            "protocol": "http",
+                            "host": [
+                                "localhost"
+                            ],
+                            "port": "3000",
+                            "path": [
+                                "api",
+                                "v1",
+                                "tot",
+                                "file-return"
+                            ]
+                        },
+                        "description": "Try to file same period twice - should fail"
+                    }
+                },
+                {
+                    "name": "File Without ToT Registration",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\\n  \\"nationalId\\": \\"27750418\\",\\n  \\"yearOfBirth\\": \\"1989\\",\\n  \\"grossSales\\": 5000,\\n  \\"filingType\\": \\"DAILY\\",\\n  \\"filingPeriod\\": \\"24 Nov 2025\\"\\n}"
+                        },
+                        "url": {
+                            "raw": "http://localhost:3000/api/v1/tot/file-return",
+                            "protocol": "http",
+                            "host": [
+                                "localhost"
+                            ],
+                            "port": "3000",
+                            "path": [
+                                "api",
+                                "v1",
+                                "tot",
+                                "file-return"
+                            ]
+                        },
+                        "description": "Try to file without ToT registration - should fail"
+                    }
+                }
+            ]
+        }
+    ],
+    "variable": [
+        {
+            "key": "base_url",
+            "value": "http://localhost:3000/api/v1/tot",
+            "type": "string"
+        }
+    ]
+}

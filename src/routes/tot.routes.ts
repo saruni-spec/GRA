@@ -4,7 +4,12 @@ import {
   getUserDetails,
   registerTin,
   registerTot,
-  getTotStatus
+  getTotStatus,
+  getAvailablePeriods,
+  calculateTax,
+  fileReturn,
+  getFilingHistory,
+  getReturnDetails
 } from '../controllers/tot.controller';
 
 const router = Router();
@@ -23,5 +28,24 @@ router.post('/register-tot', registerTot);
 
 // POST /api/v1/tot/status - Get ToT registration status
 router.post('/status', getTotStatus);
+
+// ========================================
+// ToT Filing & Payment Routes
+// ========================================
+
+// POST /api/v1/tot/available-periods - Get available filing periods
+router.post('/available-periods', getAvailablePeriods);
+
+// POST /api/v1/tot/calculate-tax - Calculate tax (3% of gross sales)
+router.post('/calculate-tax', calculateTax);
+
+// POST /api/v1/tot/file-return - File a ToT return
+router.post('/file-return', fileReturn);
+
+// POST /api/v1/tot/filing-history - Get filing history
+router.post('/filing-history', getFilingHistory);
+
+// POST /api/v1/tot/return-details - Get return details by PRN
+router.post('/return-details', getReturnDetails);
 
 export default router;

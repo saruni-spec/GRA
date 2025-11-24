@@ -146,3 +146,182 @@ export const getUserTotStatus = (nationalId: string, yearOfBirth: string): { reg
     date: user.totRegistrationDate
   };
 };
+
+// ========================================
+// ToT FILING & PAYMENT FUNCTIONALITY
+// ========================================
+
+export type FilingType = 'DAILY' | 'MONTHLY';
+export type PaymentStatus = 'PENDING' | 'PAID';
+
+export interface FilingRecord {
+  id: string;
+  nationalId: string;
+  firstName: string;
+  lastName: string;
+  tinNumber: string;
+  grossSales: number;
+  taxRate: number; // 3%
+  taxDue: number;
+  filingType: FilingType;
+  filingPeriod: string; // e.g., "26 Nov 2025" or "November 2025"
+  prn: string; // Payment Reference Number
+  filedAt: string;
+  paymentStatus: PaymentStatus;
+}
+
+// Constants
+export const TOT_TAX_RATE = 3; // 3% tax rate
+const PRN_PREFIX = 'GRA-';
+
+// In-memory filing records storage
+export const filingRecords: FilingRecord[] = [];
+
+// Generate PRN (Payment Reference Number)
+let prnCounter = 1;
+export const generatePRN = (): string => {
+  const paddedNumber = String(prnCounter++).padStart(6, '0');
+  return `${PRN_PREFIX}${paddedNumber}`;
+};
+
+// Calculate tax (3% of gross sales)
+export const calculateTotTax = (grossSales: number): number => {
+  return Math.round((grossSales * TOT_TAX_RATE / 100) * 100) / 100; // Round to 2 decimal places
+};
+
+// Generate daily periods (last 30 days)
+export const generateDailyPeriods = (): string[] => {
+  const periods: string[] = [];
+  const today = new Date();
+  
+  for (let i = 0; i < 30; i++) {
+    const date = new Date(today);
+    date.setDate(today.getDate() - i);
+    
+    const day = date.getDate();
+    const month = date.toLocaleString('en-GB', { month: 'short' });
+    const year = date.getFullYear();
+    
+    periods.push(`${day} ${month} ${year}`);
+  }
+  
+  return periods;
+};
+
+// Generate monthly periods (last 12 months)
+export const generateMonthlyPeriods = (): string[] => {
+  const periods: string[] = [];
+  const today = new Date();
+  
+  for (let i = 0; i < 12; i++) {
+    const date = new Date(today.getFullYear(), today.getMonth() - i, 1);
+    const month = date.toLocaleString('en-GB', { month: 'long' });
+    const year = date.getFullYear();
+    
+    periods.push(`${month} ${year}`);
+  }
+  
+  return periods;
+};
+
+// Get available periods for a user (excluding already filed periods)
+export const getAvailablePeriodsForUser = (
+  nationalId: string,
+  yearOfBirth: string,
+  filingType: FilingType
+): string[] => {
+  // Get user's filed periods
+  const userFilings = filingRecords.filter(
+    record => record.nationalId === nationalId && record.filingType === filingType
+  );
+  const filedPeriods = new Set(userFilings.map(f => f.filingPeriod));
+  
+  // Generate all periods and filter out filed ones
+  const allPeriods = filingType === 'DAILY' 
+    ? generateDailyPeriods() 
+    : generateMonthlyPeriods();
+  
+  return allPeriods.filter(period => !filedPeriods.has(period));
+};
+
+// Check if a period has already been filed
+export const isPeriodFiled = (
+  nationalId: string,
+  filingType: FilingType,
+  period: string
+): boolean => {
+  return filingRecords.some(
+    record => 
+      record.nationalId === nationalId && 
+      record.filingType === filingType && 
+      record.filingPeriod === period
+  );
+};
+
+// File a new return
+export const fileNewReturn = (
+  nationalId: string,
+  yearOfBirth: string,
+  grossSales: number,
+  filingType: FilingType,
+  filingPeriod: string
+): FilingRecord | null => {
+  const user = findUserByNationalId(nationalId, yearOfBirth);
+  
+  if (!user || !user.tinNumber) return null;
+  
+  // Check if period already filed
+  if (isPeriodFiled(nationalId, filingType, filingPeriod)) {
+    return null;
+  }
+  
+  const taxDue = calculateTotTax(grossSales);
+  const prn = generatePRN();
+  
+  const filingRecord: FilingRecord = {
+    id: `filing-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+    nationalId: user.nationalId,
+    firstName: user.firstName,
+    lastName: user.lastName,
+    tinNumber: user.tinNumber,
+    grossSales,
+    taxRate: TOT_TAX_RATE,
+    taxDue,
+    filingType,
+    filingPeriod,
+    prn,
+    filedAt: new Date().toISOString(),
+    paymentStatus: 'PENDING'
+  };
+  
+  filingRecords.push(filingRecord);
+  
+  return filingRecord;
+};
+
+// Get filing history for a user
+export const getFilingHistoryForUser = (
+  nationalId: string,
+  yearOfBirth: string
+): FilingRecord[] => {
+  const user = findUserByNationalId(nationalId, yearOfBirth);
+  if (!user) return [];
+  
+  return filingRecords
+    .filter(record => record.nationalId === nationalId)
+    .sort((a, b) => new Date(b.filedAt).getTime() - new Date(a.filedAt).getTime());
+};
+
+// Get return details by PRN
+export const getReturnByPRN = (prn: string): FilingRecord | undefined => {
+  return filingRecords.find(record => record.prn === prn);
+};
+
+// Update payment status (for future use)
+export const updatePaymentStatus = (prn: string, status: PaymentStatus): boolean => {
+  const record = filingRecords.find(r => r.prn === prn);
+  if (!record) return false;
+  
+  record.paymentStatus = status;
+  return true;
+};
