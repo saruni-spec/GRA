@@ -139,18 +139,14 @@ export const checkTinStatus = async (req: Request, res: Response) => {
         hasTin: true,
         tinNumber: user.tinNumber,
         userDetails: {
-          firstName: user.firstName,
-          lastName: user.lastName,
+          firstName: user.firstName || 'User',
+          lastName: user.lastName || 'User',
           nationalId: user.nationalId,
           dateOfBirth: user.dateOfBirth
         }
       });
     } else {
-      return res.json({
-        success: true,
-        hasTin: false,
-        message: 'No TIN found for this user. Please register for a TIN first.'
-      });
+      throw new Error('No TIN found for this user. Please register for a TIN first.');
     }
   } catch (error) {
     console.error('Error in checkTinStatus:', error);
