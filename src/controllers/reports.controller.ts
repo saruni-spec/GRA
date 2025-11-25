@@ -145,6 +145,83 @@ export const getTransactions = async (req: Request, res: Response) => {
   }
 };
 
+export const getMonthlySummary = async (req: Request, res: Response) => {
+  try {
+    const { phoneNumber, month } = req.params;
+    
+    // Find user by phone number
+    const user = await prisma.user.findUnique({
+      where: { phoneNumber }
+    });
+
+    if (!user) {
+      return res.status(404).json({ 
+        error: 'User not found with this phone number',
+        phoneNumber 
+      });
+    }
+    
+    // Parse month (format: "November 2025")
+    const [monthName, yearStr] = month.split(' ');
+    const year = parseInt(yearStr);
+    const monthIndex = new Date(`${monthName} 1, ${year}`).getMonth();
+    
+    // Get start and end of month
+    const startOfMonth = new Date(year, monthIndex, 1);
+    startOfMonth.setHours(0, 0, 0, 0);
+    
+    const endOfMonth = new Date(year, monthIndex + 1, 0);
+    endOfMonth.setHours(23, 59, 59, 999);
+
+    // Fetch transactions for the month
+    const transactions = await prisma.transaction.findMany({
+      where: {
+        userId: user.id,
+        createdAt: {
+          gte: startOfMonth,
+          lte: endOfMonth
+        }
+      }
+    });
+
+    // Calculate totals
+    let salesTotal = 0;
+    let costsTotal = 0;
+
+    transactions.forEach(tx => {
+      const amount = Number(tx.amount);
+      if (tx.type === 'INCOME') {
+        salesTotal += amount;
+      } else if (tx.type === 'EXPENSE') {
+        costsTotal += amount;
+      }
+    });
+
+    const difference = salesTotal - costsTotal;
+
+    // Build formatted summary text
+    const summaryText = `📊 *Monthly Summary: ${month}*\n\n` +
+      `💰 *Sales Total: GHS ${salesTotal.toFixed(2)}*\n\n` +
+      `💸 *Costs Total: GHS ${costsTotal.toFixed(2)}*\n\n` +
+      `${difference >= 0 ? '✅' : '⚠️'} *Difference: GHS ${difference.toFixed(2)}*`;
+
+    const summary = {
+      month: month,
+      currency: "GHS",
+      salesTotal: salesTotal.toFixed(2),
+      costsTotal: costsTotal.toFixed(2),
+      difference: difference.toFixed(2),
+      transactionCount: transactions.length,
+      summaryText: summaryText
+    };
+
+    res.status(200).json(summary);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+};
+
 export const getMonths = async (req: Request, res: Response) => {
   try {
     const months: string[] = [];
