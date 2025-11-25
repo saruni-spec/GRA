@@ -2,7 +2,6 @@ import express from 'express';
 import bodyParser from 'body-parser';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import path from 'path';
 // Routes
 import authRoutes from './routes/auth.routes';
 import workflowRoutes from './routes/workflow.routes';
@@ -36,12 +35,11 @@ app.use('/api/v1/reports', reportsRoutes);
 app.use('/api/v1/tot', totRoutes);
 
 // Serve static files from public directory
-app.use('/public', express.static(path.join(__dirname, '../public')));
+app.use('/public', express.static('public'));
 
 // Specific endpoint for TOT Bookkeeping PDF
 app.get('/api/v1/resources/tot-bookkeeping-guide', (req, res) => {
-  const pdfPath = path.join(__dirname, '../public/TOTBookkeeping.pdf');
-  res.sendFile(pdfPath);
+  res.sendFile('public/TOTBookkeeping.pdf', { root: '.' });
 });
 
 
