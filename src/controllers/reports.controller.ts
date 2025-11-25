@@ -144,3 +144,26 @@ export const getTransactions = async (req: Request, res: Response) => {
     res.status(500).json({ error: 'Internal Server Error' });
   }
 };
+
+export const getMonths = async (req: Request, res: Response) => {
+  try {
+    const months: string[] = [];
+    const today = new Date();
+    
+    // Generate last 12 months starting from current month
+    for (let i = 0; i < 12; i++) {
+      const date = new Date(today.getFullYear(), today.getMonth() - i, 1);
+      const month = date.toLocaleString('en-GB', { month: 'long' });
+      const year = date.getFullYear();
+      months.push(`${month} ${year}`);
+    }
+    
+    res.status(200).json({
+      months: months,
+      currentMonth: months[0]
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+};

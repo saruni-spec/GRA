@@ -9,4 +9,7 @@ router.get('/daily-summary/:phoneNumber', reportsController.getDailySummary);
 // Get transactions
 router.get('/transactions/:phoneNumber', reportsController.getTransactions);
 
+// Get months list
+router.get('/months', reportsController.getMonths);
+
 export default router;
