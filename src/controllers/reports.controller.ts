@@ -32,28 +32,81 @@ export const getDailySummary = async (req: Request, res: Response) => {
           gte: startOfDay,
           lte: endOfDay
         }
-      }
+      },
+      orderBy: { createdAt: 'desc' }
     });
 
-    // Calculate totals
+    // Calculate totals and group transactions
     let totalIncome = 0;
     let totalExpense = 0;
+    const incomeItems: Array<{item: string, units: string, amount: string}> = [];
+    const expenseItems: Array<{item: string, units: string, amount: string}> = [];
 
     transactions.forEach(tx => {
+      const amount = Number(tx.amount);
+      const itemName = tx.item || tx.category || 'Unknown';
+      const units = tx.units || '';
+      
       if (tx.type === 'INCOME') {
-        totalIncome += Number(tx.amount);
-      } else {
-        totalExpense += Number(tx.amount);
+        totalIncome += amount;
+        incomeItems.push({
+          item: itemName,
+          units: units,
+          amount: amount.toFixed(2)
+        });
+      } else if (tx.type === 'EXPENSE') {
+        totalExpense += amount;
+        expenseItems.push({
+          item: itemName,
+          units: units,
+          amount: amount.toFixed(2)
+        });
       }
     });
+
+    // Build formatted summary text for WhatsApp
+    let summaryText = `📊 *Daily Summary : ${startOfDay.toISOString().split('T')[0]}*\n\n`;
+    
+    // Income section
+    summaryText += `💰 *Total Income : ${totalIncome.toFixed(2)} GHS*\n`;
+    if (incomeItems.length > 0) {
+      incomeItems.forEach(item => {
+        summaryText += `   • ${item.item}${item.units ? ` (${item.units})` : ''} - ${item.amount} GHS\n`;
+      });
+    } else {
+      summaryText += `   No income recorded\n`;
+    }
+    
+    summaryText += `\n`;
+    
+    // Expenses section
+    summaryText += `💸 *Total Expenses : ${totalExpense.toFixed(2)} GHS*\n`;
+    if (expenseItems.length > 0) {
+      expenseItems.forEach(item => {
+        summaryText += `   • ${item.item}${item.units ? ` (${item.units})` : ''} - ${item.amount} GHS\n`;
+      });
+    } else {
+      summaryText += `   No expenses recorded\n`;
+    }
+    
+    summaryText += `\n`;
+    
+    // Net profit
+    const profit = totalIncome - totalExpense;
+    const profitEmoji = profit >= 0 ? '✅' : '⚠️';
+    summaryText += `${profitEmoji} *Net Profit : ${profit.toFixed(2)} GHS*\n\n`;
+    summaryText += `📝 *Number of Recorded Transactions : ${transactions.length}*`;
 
     const summary = {
       date: startOfDay.toISOString().split('T')[0],
       currency: "GHS",
       totalIncome: totalIncome.toFixed(2),
+      incomeItems: incomeItems,
       totalExpense: totalExpense.toFixed(2),
+      expenseItems: expenseItems,
       netProfit: (totalIncome - totalExpense).toFixed(2),
-      transactionCount: transactions.length
+      transactionCount: transactions.length,
+      summaryText: summaryText
     };
 
     res.status(200).json(summary);

@@ -30,6 +30,7 @@ export const processInput = async (req: Request, res: Response) => {
   let audioFilePath: string | null = null;
   
   try {
+    console.log(req.body);
     const { phoneNumber, inputType, content, audioUrl, workflowSessionId } = req.body;
     
     // 1. Find or Create User
