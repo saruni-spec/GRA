@@ -34,6 +34,14 @@ app.use('/api/v1/osint', osintRoutes);
 app.use('/api/v1/reports', reportsRoutes);
 app.use('/api/v1/tot', totRoutes);
 
+// Serve static files from public directory
+app.use('/public', express.static('public'));
+
+// Specific endpoint for TOT Bookkeeping PDF
+app.get('/api/v1/resources/tot-bookkeeping-guide', (req, res) => {
+  res.sendFile('public/TOTBookkeeping.pdf', { root: '.' });
+});
+
 
 // Test endpoint
 app.get('/test-db', async (req, res) => {
