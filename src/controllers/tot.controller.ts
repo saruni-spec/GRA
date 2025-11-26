@@ -52,11 +52,16 @@ export const registerUser = async (req: Request, res: Response) => {
       where: { nationalId }
     });
 
+     const dateOfBirth = new Date(`${yearOfBirth}-01-01`);
+
     if (existingUser) {
-      return res.status(400).json({
-        success: false,
-        error: 'User with this National ID already exists',
-        userId: existingUser.id
+      //Upate the user
+      await prisma.user.update({
+        where: { phoneNumber:phoneNumber },
+        data: {
+         nationalId,
+         dateOfBirth
+        }
       });
     }
 
@@ -73,7 +78,6 @@ export const registerUser = async (req: Request, res: Response) => {
     }
 
     // Create user in database
-    const dateOfBirth = new Date(`${yearOfBirth}-01-01`);
     const newUser = await prisma.user.create({
       data: {
         nationalId,
