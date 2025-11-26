@@ -557,7 +557,12 @@ export const calculateTax = async (req: Request, res: Response) => {
  */
 export const fileReturn = async (req: Request, res: Response) => {
   try {
-    const { nationalId, yearOfBirth, grossSales, filingType, filingPeriod } = req.body;
+    const { nationalId, yearOfBirth, filingPeriod } = req.body;
+
+    const filingType = req.body.filingType.toUpperCase();
+    const grossSales = Number(req.body.grossSales);
+  
+    
 
     // Validation
     if (!nationalId || !yearOfBirth || grossSales === undefined || !filingType || !filingPeriod) {
@@ -566,6 +571,7 @@ export const fileReturn = async (req: Request, res: Response) => {
         error: 'All fields are required: nationalId, yearOfBirth, grossSales, filingType, filingPeriod'
       });
     }
+    console.log('passed validation nationalId');
 
     if (filingType !== 'DAILY' && filingType !== 'MONTHLY') {
       return res.status(400).json({
@@ -574,12 +580,18 @@ export const fileReturn = async (req: Request, res: Response) => {
       });
     }
 
+    console.log('passed validation filingType');
+
+   
+
     if (typeof grossSales !== 'number' || grossSales < 0) {
       return res.status(400).json({
         success: false,
         error: 'Gross Sales must be a positive number'
       });
     }
+
+    console.log('passed validation grossSales');
 
     // Check if user exists and is registered for ToT
     const user = await findUserByNationalId(nationalId, yearOfBirth);
@@ -590,12 +602,16 @@ export const fileReturn = async (req: Request, res: Response) => {
       });
     }
 
+    console.log('passed validation user');
+
     if (!user.totRegistered) {
       return res.status(400).json({
         success: false,
         error: 'User is not registered for ToT. Please register first.'
       });
     }
+
+console.log('passed validation totRegistered');
 
     // File the return
     const filingRecord = await fileNewReturn(nationalId, yearOfBirth, grossSales, filingType as FilingType, filingPeriod);
@@ -606,6 +622,8 @@ export const fileReturn = async (req: Request, res: Response) => {
         error: `This period (${filingPeriod}) has already been filed. You can file only once per period.`
       });
     }
+
+    console.log('passed validation filingRecord');
 
     return res.json({
       success: true,
