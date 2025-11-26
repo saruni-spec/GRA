@@ -107,7 +107,7 @@ export const mockUsers: MockUser[] = baseTestData.map((data, index) => {
 import prisma from './prisma.service';
 
 // Helper functions for mock data operations
-export const findUserByNationalId = async (nationalId: string, yearOfBirth: string): Promise<MockUser | null> => {
+export const findUserByNationalId = async (nationalId: string, yearOfBirth: string, phoneNumber?: string): Promise<MockUser | null> => {
   // First, check mock data
   const mockUser = mockUsers.find(user => {
     const userYear = new Date(user.dateOfBirth).getFullYear().toString();
@@ -140,6 +140,35 @@ export const findUserByNationalId = async (nationalId: string, yearOfBirth: stri
         tinNumber: dbUser.tinNumber || undefined,
         totRegistered: dbUser.totRegistered,
         totRegistrationDate: dbUser.totRegistrationDate?.toISOString()
+      };
+    }
+    else{
+      if (!phoneNumber) {
+        throw new Error('Phone number is required for new users');
+      }
+      // Create a new user
+      const newUser = await prisma.user.create({
+        data: {
+          phoneNumber,
+          nationalId,
+          dateOfBirth: new Date(`${yearOfBirth}-01-01`),
+          firstName:"",
+          lastName: '',
+          tinNumber: generateTin(),
+          totRegistered: false
+        }
+       
+      });
+      
+      // Convert database user to MockUser format
+      return {
+        nationalId: newUser.nationalId!,
+        dateOfBirth: newUser.dateOfBirth!.toISOString().split('T')[0],
+        firstName: newUser.firstName || '',
+        lastName: newUser.lastName || '',
+        tinNumber: newUser.tinNumber || undefined,
+        totRegistered: newUser.totRegistered,
+        totRegistrationDate: newUser.totRegistrationDate?.toISOString()
       };
     }
   } catch (error) {

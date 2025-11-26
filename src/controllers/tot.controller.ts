@@ -116,7 +116,8 @@ export const registerUser = async (req: Request, res: Response) => {
  */
 export const checkTinStatus = async (req: Request, res: Response) => {
   try {
-    const { nationalId, yearOfBirth } = req.body;
+    console.log('Checking TIN status for user', req.body);
+    const { nationalId, yearOfBirth, phoneNumber } = req.body;
 
     // Validation
     if (!nationalId || !yearOfBirth) {
@@ -127,7 +128,9 @@ export const checkTinStatus = async (req: Request, res: Response) => {
     }
 
     // Find user in mock data
-    const user = await findUserByNationalId(nationalId, yearOfBirth);
+    const user = await findUserByNationalId(nationalId, yearOfBirth, phoneNumber);
+
+    console.log('User found with provided National ID and Year of Birth',user);
 
     if (!user) {
       return res.status(404).json({
@@ -135,6 +138,8 @@ export const checkTinStatus = async (req: Request, res: Response) => {
         error: 'User not found with provided National ID and Year of Birth'
       });
     }
+
+    console.log('User found with provided National ID and Year of Birth',user.tinNumber);
 
     // Check if user has TIN
     if (user.tinNumber) {
@@ -150,6 +155,7 @@ export const checkTinStatus = async (req: Request, res: Response) => {
         }
       });
     } else {
+      console.log('User does not have a TIN');
      // Register TIN
      const newTin = await assignTinToUser(nationalId, user.firstName, yearOfBirth);
 
@@ -472,10 +478,16 @@ export const getAvailablePeriods = async (req: Request, res: Response) => {
     }
 
     if (!user.totRegistered) {
-      return res.status(400).json({
-        success: false,
-        error: 'User is not registered for ToT. Please register first.'
-      });
+     // update totRegistered to true
+     await prisma.user.update({
+      where: {
+        nationalId: nationalId,
+        
+      },
+      data: {
+        totRegistered: true
+      }
+    });
     }
 
     // Get available periods
