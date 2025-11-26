@@ -8,6 +8,7 @@ import workflowRoutes from './routes/workflow.routes';
 import osintRoutes from './routes/osint.routes';
 import reportsRoutes from './routes/reports.routes';
 import totRoutes from './routes/tot.routes';
+import dashboardRoutes from './routes/dashboard.routes';
 import prisma from './services/prisma.service';
 
 
@@ -15,7 +16,7 @@ import prisma from './services/prisma.service';
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 4000;
 
 // Middleware
 app.use(cors());
@@ -33,6 +34,7 @@ app.use('/api/v1/workflow', workflowRoutes);
 app.use('/api/v1/osint', osintRoutes);
 app.use('/api/v1/reports', reportsRoutes);
 app.use('/api/v1/tot', totRoutes);
+app.use('/api/v1/dashboard', dashboardRoutes);
 
 // Serve static files from public directory
 app.use('/public', express.static('public'));
