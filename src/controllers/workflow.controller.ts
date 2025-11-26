@@ -99,8 +99,8 @@ export const processInput = async (req: Request, res: Response) => {
         Input to analyze:
       `;
 
-      // Handle AUDIO input
-      if (inputType === 'AUDIO' && audioUrl) {
+      // Handle AUDIO input - Check for audioUrl regardless of inputType
+      if (audioUrl) {
         console.log(`Processing audio input from: ${audioUrl}`);
         
         // Download audio file
@@ -138,8 +138,8 @@ export const processInput = async (req: Request, res: Response) => {
         transcribedText = `[Audio processed]`;
         
       } 
-      // Handle TEXT input
-      else if (inputType === 'TEXT' && content) {
+      // Handle TEXT input - Fallback to text if no audioUrl
+      else if (content) {
         const fullPrompt = prompt + `\n"${content}"`;
         
         const result = await model.generateContent(fullPrompt);
@@ -160,7 +160,7 @@ export const processInput = async (req: Request, res: Response) => {
       console.error("Gemini AI Error:", aiError);
       
       // Fallback to basic regex if AI fails (only works for text)
-      if (inputType === 'TEXT' && content) {
+      if (content) {
         const text = content.toLowerCase();
         extractedData.intent = "TRANSACTION"; // Default fallback
         if (text.match(/(sold|sale|sell|received|income)/)) extractedData.data.type = "INCOME";
@@ -180,7 +180,7 @@ export const processInput = async (req: Request, res: Response) => {
       }
     }
     
-    console.log(`Processed ${inputType} input for ${phoneNumber}: ${transcribedText} -> ${JSON.stringify(extractedData)}`);
+    console.log(`Processed ${audioUrl ? 'AUDIO' : 'TEXT'} input for ${phoneNumber}: ${transcribedText} -> ${JSON.stringify(extractedData)}`);
 
     // 3. Handle Intents
     let replyText = extractedData.reply || "Processed.";
@@ -221,7 +221,7 @@ export const processInput = async (req: Request, res: Response) => {
       replyText,
       requiresConfirmation,
       extractedData, // Return full structure including intent and data
-      transcribedText: inputType === 'AUDIO' ? transcribedText : undefined
+      transcribedText: audioUrl ? transcribedText : undefined
     });
   } catch (error) {
     console.error("Error in processInput:", error);
