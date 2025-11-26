@@ -62,7 +62,7 @@ export const processInput = async (req: Request, res: Response) => {
 
     try {
       const prompt = `
-        You are a smart assistant for an informal business in Ghana.
+        You are an assistant for an informal business in Ghana to help them manage their business and taxes.
         Analyze the input and classify the user's INTENT.
         
         Possible Intents:
@@ -244,9 +244,14 @@ export const confirmTransaction = async (req: Request, res: Response) => {
 
     if (confirmation === 'YES' || confirmation === 'Yes') {
       // 1. Get User
-      const user = await prisma.user.findUnique({ where: { phoneNumber } });
+      let user = await prisma.user.findUnique({ where: { phoneNumber } });
       if (!user) {
-        return res.status(404).json({ error: "User not found" });
+        //Create User
+        user = await prisma.user.create({
+          data: {
+            phoneNumber,
+          }
+        });
       }
 
       // Handle new structure where data is nested in 'data' property

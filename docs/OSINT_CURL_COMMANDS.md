@@ -4,7 +4,7 @@
 
 ### 1. Scrape Hair Salons in Madina
 ```bash
-curl -X POST http://localhost:3000/api/v1/osint/scrape \
+curl -X POST http://localhost:4000/api/v1/osint/scrape \
   -H "Content-Type: application/json" \
   -d '{
     "location": "Madina, Accra",
