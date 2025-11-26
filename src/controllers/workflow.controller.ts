@@ -242,7 +242,7 @@ export const confirmTransaction = async (req: Request, res: Response) => {
   try {
     const { phoneNumber, confirmation, transactionData } = req.body;
 
-    if (confirmation === 'YES' || confirmation === 'Yes') {
+   
       // 1. Get User
       let user = await prisma.user.findUnique({ where: { phoneNumber } });
       if (!user) {
@@ -267,12 +267,12 @@ export const confirmTransaction = async (req: Request, res: Response) => {
         data: {
           userId: user.id,
           type: dataToSave.type,
-          category: dataToSave.category,
-          amount: dataToSave.amount,
+          category: dataToSave.category || "Unspecified",
+          amount: dataToSave.amount || 0,
           currency: dataToSave.currency || "GHS",
-          item: dataToSave.item,
-          units: dataToSave.units,
-          rawText: dataToSave.description,
+          item: dataToSave.item || "Unspecified",
+          units: dataToSave.units || "Unspecified",
+          rawText: dataToSave.description || "Unspecified",
           confidenceScore: 1.0
         }
       });
@@ -283,12 +283,7 @@ export const confirmTransaction = async (req: Request, res: Response) => {
         status: "SAVED",
         replyText: "Transaction saved successfully! 🎉"
       });
-    } else {
-      res.status(200).json({
-        status: "CANCELLED",
-        replyText: "Transaction cancelled."
-      });
-    }
+    
   } catch (error) {
     console.error("Error in confirmTransaction:", error);
     res.status(500).json({ error: 'Internal Server Error' });
