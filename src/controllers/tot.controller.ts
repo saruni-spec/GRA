@@ -150,7 +150,27 @@ export const checkTinStatus = async (req: Request, res: Response) => {
         }
       });
     } else {
-      throw new Error('No TIN found for this user. Please register for a TIN first.');
+     // Register TIN
+     const newTin = await assignTinToUser(nationalId, user.firstName, yearOfBirth);
+
+     if (!newTin) {
+       return res.status(500).json({
+         success: false,
+         error: 'Failed to register TIN'
+       });
+     }
+
+     return res.json({
+       success: true,
+       hasTin: true,
+       tinNumber: newTin,
+       userDetails: {
+         firstName: user.firstName || 'User',
+         lastName: user.lastName || 'User',
+         nationalId: user.nationalId,
+         dateOfBirth: user.dateOfBirth
+       }
+     });
     }
   } catch (error) {
     console.error('Error in checkTinStatus:', error);
