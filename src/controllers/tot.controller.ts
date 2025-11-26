@@ -303,12 +303,19 @@ export const registerTot = async (req: Request, res: Response) => {
       });
     }
 
+    let tin=user.tinNumber || null;
+
     // Check if user has TIN
-    if (!user.tinNumber) {
-      return res.status(400).json({
-        success: false,
-        error: 'User must have a TIN before registering for ToT. Please register for TIN first.'
-      });
+    if (!tin || tin === null) {
+      // Register TIN first
+      tin = await assignTinToUser(nationalId, user.firstName, yearOfBirth);
+
+      if (!tin) {
+        return res.status(500).json({
+          success: false,
+          error: 'Failed to register TIN'
+        });
+      }
     }
 
     // Check if already registered for ToT
@@ -338,7 +345,7 @@ export const registerTot = async (req: Request, res: Response) => {
         firstName: user.firstName,
         lastName: user.lastName,
         nationalId: user.nationalId,
-        tinNumber: user.tinNumber,
+        tinNumber: tin,
         totRegistered: true,
         totRegistrationDate: user.totRegistrationDate
       }

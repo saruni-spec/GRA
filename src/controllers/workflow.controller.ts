@@ -250,6 +250,11 @@ export const confirmTransaction = async (req: Request, res: Response) => {
         user = await prisma.user.create({
           data: {
             phoneNumber,
+            totRegistered: false,
+            firstName:"",
+            lastName:"",
+            nationalId:""
+            
           }
         });
       }
