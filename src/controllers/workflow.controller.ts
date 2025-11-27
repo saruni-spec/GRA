@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import prisma from '../services/prisma.service';
 import { downloadAudio, audioToBase64, cleanupAudioFile, getMimeType } from '../services/audio.service';
+import { getTOTBookkeepingContext } from '../services/pdf.service';
 
 // 2. AI Logic (Gemini 2.0 Flash)
 type WorkflowIntent = "TRANSACTION" | "REGISTER" | "INFO" | "TAX_FILING";
@@ -206,8 +207,33 @@ export const processInput = async (req: Request, res: Response) => {
         break;
 
       case 'INFO':
-        // Use the AI generated reply or a default
-        if (!replyText) replyText = "Here is the information you requested.";
+        // Load TOT Bookkeeping guide content
+        try {
+          const pdfContext = await getTOTBookkeepingContext();
+          
+          // Generate informed response using PDF context
+          const infoPrompt = `
+You are an assistant helping informal businesses in Ghana with tax and bookkeeping questions.
+
+Use the following official TOT Bookkeeping Guide to answer the user's question accurately:
+
+${pdfContext}
+
+User's question: "${transcribedText}"
+
+Provide a clear, helpful answer based on the official guide. Keep it concise (2-3 sentences max). 
+If the guide doesn't cover the topic, say so politely and suggest contacting GRA directly.
+          `;
+          
+          const infoResult = await model.generateContent(infoPrompt);
+          const infoResponse = await infoResult.response;
+          replyText = infoResponse.text();
+          
+        } catch (pdfError) {
+          console.error('Error loading PDF context:', pdfError);
+          // Fallback to generic response
+          replyText = extractedData.reply || "I can help with that. Please contact GRA for detailed information.";
+        }
         requiresConfirmation = false;
         break;
         
