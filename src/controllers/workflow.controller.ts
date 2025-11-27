@@ -93,7 +93,7 @@ export const processInput = async (req: Request, res: Response) => {
              "currency": "GHS",
              "description": "Short summary"
           },
-          "reply": "A short, friendly response to the user based on their intent (max 1 sentence)."
+          "reply": "A short, friendly response to the user describing what was done (max 1 sentence)."
         }
         
         Input to analyze:

@@ -1,4 +1,5 @@
-import puppeteer, { Browser, Page } from 'puppeteer';
+import puppeteer, { Page } from 'puppeteer-core';
+import chromium from '@sparticuz/chromium';
 
 // Utility function to delay execution
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
@@ -26,21 +27,38 @@ export async function scrapeGoogleMaps(
   location: string,
   maxResults: number = 20
 ): Promise<ScrapedBusiness[]> {
-  let browser: Browser | null = null;
+  let browser: any = null;
   
   try {
     console.log(`Starting Google Maps scrape: "${businessType}" in "${location}"`);
     
+    // Determine executable path based on environment
+    let executablePath = await chromium.executablePath();
+    
+    // If running locally (executablePath is null), try to find local Chrome or use puppeteer's default
+    if (!executablePath) {
+      // Try standard Linux path or fallback to a known location if needed
+      // For local dev with full puppeteer installed, we might need to import it dynamically
+      // or just rely on the user having Chrome installed.
+      // A common fallback for local dev:
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-var-requires
+        const puppeteerFull = require('puppeteer');
+        executablePath = puppeteerFull.executablePath();
+      } catch (e) {
+        console.warn('Full puppeteer not found, falling back to default paths');
+        executablePath = '/usr/bin/google-chrome-stable'; // Common Linux path
+      }
+    }
+
+    console.log(`Using executable path: ${executablePath}`);
+
     // Launch headless browser
     browser = await puppeteer.launch({
+      args: chromium.args,
+      defaultViewport: { width: 1920, height: 1080 },
+      executablePath: executablePath,
       headless: true,
-      args: [
-        '--no-sandbox',
-        '--disable-setuid-sandbox',
-        '--disable-dev-shm-usage',
-        '--disable-accelerated-2d-canvas',
-        '--disable-gpu'
-      ]
     });
 
     const page = await browser.newPage();

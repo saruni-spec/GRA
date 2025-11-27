@@ -9,6 +9,7 @@ import osintRoutes from './routes/osint.routes';
 import reportsRoutes from './routes/reports.routes';
 import totRoutes from './routes/tot.routes';
 import dashboardRoutes from './routes/dashboard.routes';
+import transactionsRoutes from './routes/transactions.routes';
 import prisma from './services/prisma.service';
 
 
@@ -35,6 +36,7 @@ app.use('/api/v1/osint', osintRoutes);
 app.use('/api/v1/reports', reportsRoutes);
 app.use('/api/v1/tot', totRoutes);
 app.use('/api/v1/dashboard', dashboardRoutes);
+app.use('/api/v1/transactions', transactionsRoutes);
 
 // Serve static files from public directory
 app.use('/public', express.static('public'));
