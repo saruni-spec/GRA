@@ -3,6 +3,7 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 import prisma from '../services/prisma.service';
 import { downloadAudio, audioToBase64, cleanupAudioFile, getMimeType } from '../services/audio.service';
 import { getTOTBookkeepingContext } from '../services/pdf.service';
+import { generateAudioResponse } from '../services/tts.service';
 
 // 2. AI Logic (Gemini 2.0 Flash)
 type WorkflowIntent = "TRANSACTION" | "REGISTER" | "INFO" | "TAX_FILING";
@@ -19,8 +20,10 @@ interface TransactionData {
 
 interface ExtractedData {
       intent: WorkflowIntent;
+      transcription?: string;
       data: TransactionData;
       reply?: string;
+      replyAudioUrl?: string;
 }
 
 // Initialize Gemini
@@ -77,6 +80,7 @@ export const processInput = async (req: Request, res: Response) => {
         Structure:
         {
           "intent": "TRANSACTION" | "REGISTER" | "INFO" | "TAX_FILING",
+          "transcription": "The transcribed text of what the user said (CRITICAL: Must be accurate)",
           "data": {
              // For TRANSACTION, extract:
              "type": "INCOME" or "EXPENSE" (default EXPENSE),
@@ -136,7 +140,9 @@ export const processInput = async (req: Request, res: Response) => {
         const jsonString = text.replace(/```json/g, '').replace(/```/g, '').trim();
         extractedData = JSON.parse(jsonString);
         
-        transcribedText = `[Audio processed]`;
+        // Use the transcription from the model if available, otherwise fallback
+        transcribedText = extractedData.transcription || extractedData.data.description || "[Audio processed]";
+
         
       } 
       // Handle TEXT input - Fallback to text if no audioUrl
@@ -228,6 +234,27 @@ If the guide doesn't cover the topic, say so politely and suggest contacting GRA
           const infoResult = await model.generateContent(infoPrompt);
           const infoResponse = await infoResult.response;
           replyText = infoResponse.text();
+
+          // Generate Audio Response if input was audio
+          if (audioUrl) {
+            try {
+              // Generate audio for the reply
+              const audioReplyUrl = await generateAudioResponse(replyText);
+              
+              // We need to pass this back. 
+              // Since the response structure is fixed, let's add it to the response object
+              // We'll need to update the response type or just add it dynamically
+              (res as any).audioReplyUrl = audioReplyUrl; 
+              
+              // Actually, let's just add it to the final JSON response
+              // We'll store it in a variable here and use it later
+              extractedData.replyAudioUrl = audioReplyUrl;
+
+            } catch (ttsError) {
+              console.error("TTS Generation failed:", ttsError);
+              // Continue without audio, just text
+            }
+          }
           
         } catch (pdfError) {
           console.error('Error loading PDF context:', pdfError);
@@ -245,6 +272,7 @@ If the guide doesn't cover the topic, say so politely and suggest contacting GRA
     res.status(200).json({
       status: "SUCCESS",
       replyText,
+      replyAudioUrl: extractedData.replyAudioUrl,
       requiresConfirmation,
       extractedData, // Return full structure including intent and data
       transcribedText: audioUrl ? transcribedText : undefined
