@@ -288,11 +288,20 @@ export const confirmTransaction = async (req: Request, res: Response) => {
       // Handle new structure where data is nested in 'data' property
       const dataToSave: TransactionData = transactionData;
 
+      const type = dataToSave.type.toUpperCase() as "INCOME" | "EXPENSE" | "TAX";
+
+      if(type !== "INCOME" && type !== "EXPENSE" && type !== "TAX") {
+        return res.status(400).json({
+          status: "ERROR",
+          message: "Invalid transaction type"
+        });
+      }
+
       // 2. Save Transaction
       const transaction = await prisma.transaction.create({
         data: {
           userId: user.id,
-          type: dataToSave.type,
+          type: type ,
           category: dataToSave.category || "Unspecified",
           amount: dataToSave.amount || 0,
           currency: dataToSave.currency || "GHS",
@@ -304,10 +313,17 @@ export const confirmTransaction = async (req: Request, res: Response) => {
       });
 
       console.log(`Saved transaction ${transaction.id} for ${phoneNumber}`);
+
+      const replyText = `
+      ✅ Transaction saved successfully!
+      Amount: ${dataToSave.amount || 0}
+      Category: ${dataToSave.category || "Unspecified"}
+      Type: ${type}
+      `;
       
       res.status(200).json({
         status: "SAVED",
-        replyText: "Transaction saved successfully! 🎉"
+        replyText: replyText
       });
     
   } catch (error) {
