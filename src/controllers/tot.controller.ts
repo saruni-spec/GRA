@@ -14,6 +14,7 @@ import {
   getReturnByPRN
 } from '../services/tot-mock-data';
 import prisma from '../services/prisma.service';
+import { PdfGeneratorService } from '../services/workflow/pdf-generator.service';
 
 /**
  * Register a new user with National ID, Phone Number, and Year of Birth
@@ -594,7 +595,11 @@ export const fileReturn = async (req: Request, res: Response) => {
     console.log('passed validation grossSales');
 
     // Check if user exists and is registered for ToT
-    const user = await findUserByNationalId(nationalId, yearOfBirth);
+    // We need the Prisma user to store the transaction
+    const user = await prisma.user.findUnique({
+      where: { nationalId }
+    });
+
     if (!user) {
       return res.status(404).json({
         success: false,
@@ -625,10 +630,50 @@ console.log('passed validation totRegistered');
 
     console.log('passed validation filingRecord');
 
+    // --- NEW: Store as Transaction in DB ---
+    let pdfUrl: string | undefined;
+    try {
+      // Create Transaction record
+      const taxTransaction = await prisma.transaction.create({
+        data: {
+          userId: user.id,
+          type: 'TAX',
+          category: `${filingType} Tax Return`,
+          amount: filingRecord.taxDue,
+          currency: 'GHS',
+          item: filingPeriod,
+          units: '1',
+          rawText: `PRN: ${filingRecord.prn}`, // Store PRN for reference
+          confidenceScore: 1.0
+        }
+      });
+      
+      console.log(`Stored tax transaction ${taxTransaction.id} for user ${user.id}`);
+
+      // --- NEW: Generate PDF Receipt ---
+      // We reuse the PdfGeneratorService. It expects an array of transactions.
+      // We might want to customize the receipt title for taxes later, but for now the generic one works.
+      // Or we can add a specific method to PdfGeneratorService for Tax Receipts.
+      // For this POC, let's use the existing one.
+      
+      // Import PdfGeneratorService dynamically or at top. 
+      // Since I can't easily add top-level imports with replace_file_content without context, 
+      // I'll assume I need to add the import at the top separately or use a dynamic import if supported (but top level is better).
+      // I will add the import in a separate step.
+      
+      // For now, let's assume PdfGeneratorService is imported.
+      pdfUrl = await PdfGeneratorService.generateTaxReceipt(taxTransaction, user);
+      
+    } catch (dbError) {
+      console.error('Error storing tax transaction or generating PDF:', dbError);
+      // Don't fail the request if just storage/PDF fails, but log it.
+    }
+
     return res.json({
       success: true,
       message: `✅ Dear ${filingRecord.firstName} ${filingRecord.lastName}, Your Turnover Tax return has been filed successfully.`,
       prn: filingRecord.prn,
+      pdfUrl, // Return the PDF URL
       returnDetails: {
         sellerName: `${filingRecord.firstName} ${filingRecord.lastName}`,
         sellerTin: filingRecord.tinNumber,
