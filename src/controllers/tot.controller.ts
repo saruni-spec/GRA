@@ -156,6 +156,9 @@ export const checkTinStatus = async (req: Request, res: Response) => {
         }
       });
     } 
+    else{
+      throw new Error('User does not have a TIN');
+    }
   } catch (error) {
     console.error('Error in checkTinStatus:', error);
     return res.status(500).json({
