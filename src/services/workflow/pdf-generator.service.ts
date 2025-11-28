@@ -201,4 +201,129 @@ export class PdfGeneratorService {
       }
     });
   }
+  /**
+   * Generates a Daily Summary PDF
+   */
+  static async generateDailySummaryPdf(
+    user: User,
+    date: string,
+    incomeItems: any[],
+    expenseItems: any[],
+    totals: { income: number; expense: number; profit: number }
+  ): Promise<string> {
+    return new Promise((resolve, reject) => {
+      try {
+        const doc = new PDFDocument({ margin: 50 });
+        const buffers: Buffer[] = [];
+        
+        const stream = new PassThrough();
+        doc.pipe(stream);
+        
+        stream.on('data', (chunk) => buffers.push(chunk));
+        stream.on('end', async () => {
+          try {
+            const pdfBuffer = Buffer.concat(buffers);
+            const base64Pdf = pdfBuffer.toString('base64');
+            const dataUri = `data:application/pdf;base64,${base64Pdf}`;
+            
+            const uploadResult = await cloudinary.uploader.upload(dataUri, {
+              resource_type: 'auto',
+              folder: 'ghana-poc-reports',
+              public_id: `daily_summary_${user.phoneNumber}_${Date.now()}`,
+              format: 'pdf'
+            });
+            
+            console.log('Daily Summary PDF uploaded:', uploadResult.secure_url);
+            resolve(uploadResult.secure_url);
+          } catch (err) {
+            reject(err);
+          }
+        });
+
+        // --- PDF Content ---
+        
+        // Header
+        doc.fontSize(20).text('Daily Transaction Summary', { align: 'center' });
+        doc.moveDown(0.5);
+        doc.fontSize(12).text(`Date: ${date}`, { align: 'center' });
+        doc.moveDown();
+        
+        doc.fontSize(10).text(`Business/User: ${user.firstName} ${user.lastName}`);
+        doc.text(`Phone: ${user.phoneNumber}`);
+        doc.moveDown();
+        
+        // Divider
+        doc.moveTo(50, doc.y).lineTo(550, doc.y).stroke();
+        doc.moveDown();
+
+        // Helper to draw table rows
+        const drawRow = (item: string, amount: string, y: number, bold: boolean = false) => {
+          if (bold) doc.font('Helvetica-Bold');
+          else doc.font('Helvetica');
+          
+          doc.text(item, 50, y);
+          doc.text(amount, 400, y, { align: 'right' });
+          doc.font('Helvetica');
+        };
+
+        // Income Section
+        doc.font('Helvetica-Bold').fontSize(14).fillColor('green').text('Income', 50);
+        doc.fillColor('black').fontSize(10);
+        doc.moveDown(0.5);
+        
+        if (incomeItems.length > 0) {
+          incomeItems.forEach(item => {
+            const text = `${item.item} ${item.units ? `(${item.units})` : ''}`;
+            drawRow(text, `${item.amount} GHS`, doc.y);
+            doc.moveDown();
+          });
+        } else {
+          doc.text('No income recorded.', { oblique: true });
+          doc.moveDown();
+        }
+        
+        doc.moveDown();
+
+        // Expense Section
+        doc.font('Helvetica-Bold').fontSize(14).fillColor('red').text('Expenses', 50);
+        doc.fillColor('black').fontSize(10);
+        doc.moveDown(0.5);
+        
+        if (expenseItems.length > 0) {
+          expenseItems.forEach(item => {
+            const text = `${item.item} ${item.units ? `(${item.units})` : ''}`;
+            drawRow(text, `${item.amount} GHS`, doc.y);
+            doc.moveDown();
+          });
+        } else {
+          doc.text('No expenses recorded.', { oblique: true });
+          doc.moveDown();
+        }
+
+        doc.moveDown();
+        doc.moveTo(50, doc.y).lineTo(550, doc.y).stroke();
+        doc.moveDown();
+
+        // Summary Section
+        const summaryY = doc.y;
+        doc.font('Helvetica-Bold').fontSize(12);
+        
+        doc.text('Total Income:', 50, summaryY);
+        doc.text(`${totals.income.toFixed(2)} GHS`, 400, summaryY, { align: 'right' });
+        
+        doc.text('Total Expenses:', 50, summaryY + 20);
+        doc.text(`${totals.expense.toFixed(2)} GHS`, 400, summaryY + 20, { align: 'right' });
+        
+        doc.rect(50, summaryY + 45, 500, 30).fillAndStroke('#f0f0f0', '#000000');
+        doc.fillColor('black');
+        doc.text('Net Profit:', 60, summaryY + 55);
+        doc.text(`${totals.profit.toFixed(2)} GHS`, 400, summaryY + 55, { align: 'right' });
+        
+        doc.end();
+        
+      } catch (error) {
+        reject(error);
+      }
+    });
+  }
 }

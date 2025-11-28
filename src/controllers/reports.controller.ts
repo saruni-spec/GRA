@@ -64,38 +64,37 @@ export const getDailySummary = async (req: Request, res: Response) => {
       }
     });
 
-    // Build formatted summary text for WhatsApp
+    // Generate PDF Summary
+    let pdfUrl = '';
+    try {
+      // Import dynamically or assume it's available if imported at top. 
+      // Since I can't see imports here, I'll rely on the existing import or add it if missing.
+      // Assuming PdfGeneratorService is imported from '../services/workflow/pdf-generator.service'
+      const { PdfGeneratorService } = require('../services/workflow/pdf-generator.service');
+      
+      pdfUrl = await PdfGeneratorService.generateDailySummaryPdf(
+        user,
+        startOfDay.toISOString().split('T')[0],
+        incomeItems,
+        expenseItems,
+        { income: totalIncome, expense: totalExpense, profit: totalIncome - totalExpense }
+      );
+    } catch (pdfError) {
+      console.error('Error generating daily summary PDF:', pdfError);
+    }
+
+    // Build formatted summary text for WhatsApp (Simplified)
     let summaryText = `📊 *Daily Summary : ${startOfDay.toISOString().split('T')[0]}*\n\n`;
+    summaryText += `💰 *Income:* ${totalIncome.toFixed(2)} GHS\n`;
+    summaryText += `💸 *Expenses:* ${totalExpense.toFixed(2)} GHS\n`;
     
-    // Income section
-    summaryText += `💰 *Total Income : ${totalIncome.toFixed(2)} GHS*\n`;
-    if (incomeItems.length > 0) {
-      incomeItems.forEach(item => {
-        summaryText += `   • ${item.item}${item.units ? ` (${item.units})` : ''} - ${item.amount} GHS\n`;
-      });
-    } else {
-      summaryText += `   No income recorded\n`;
-    }
-    
-    summaryText += `\n`;
-    
-    // Expenses section
-    summaryText += `💸 *Total Expenses : ${totalExpense.toFixed(2)} GHS*\n`;
-    if (expenseItems.length > 0) {
-      expenseItems.forEach(item => {
-        summaryText += `   • ${item.item}${item.units ? ` (${item.units})` : ''} - ${item.amount} GHS\n`;
-      });
-    } else {
-      summaryText += `   No expenses recorded\n`;
-    }
-    
-    summaryText += `\n`;
-    
-    // Net profit
     const profit = totalIncome - totalExpense;
     const profitEmoji = profit >= 0 ? '✅' : '⚠️';
-    summaryText += `${profitEmoji} *Net Profit : ${profit.toFixed(2)} GHS*\n\n`;
-    summaryText += `📝 *Number of Recorded Transactions : ${transactions.length}*`;
+    summaryText += `${profitEmoji} *Net Profit:* ${profit.toFixed(2)} GHS\n\n`;
+    
+    if (pdfUrl) {
+      summaryText += `📄 *Download Full Report:* ${pdfUrl}`;
+    }
 
     const summary = {
       date: startOfDay.toISOString().split('T')[0],
@@ -104,9 +103,10 @@ export const getDailySummary = async (req: Request, res: Response) => {
       incomeItems: incomeItems,
       totalExpense: totalExpense.toFixed(2),
       expenseItems: expenseItems,
-      netProfit: (totalIncome - totalExpense).toFixed(2),
+      netProfit: profit.toFixed(2),
       transactionCount: transactions.length,
-      summaryText: summaryText
+      summaryText: summaryText,
+      pdfUrl: pdfUrl
     };
 
     res.status(200).json(summary);
