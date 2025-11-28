@@ -77,6 +77,8 @@ export const processInput = async (req: Request, res: Response) => {
         requiresConfirmation = false;
     }
 
+
+
     res.status(200).json({
       status: "SUCCESS",
       replyText,
