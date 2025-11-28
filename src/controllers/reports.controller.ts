@@ -85,7 +85,7 @@ export const getDailySummary = async (req: Request, res: Response) => {
 
     // Build formatted summary text for WhatsApp (Simplified)
     let summaryText = `📊 *Daily Summary : ${startOfDay.toISOString().split('T')[0]}*\n\n`;
-    summaryText += `💰 *Income:* ${totalIncome.toFixed(2)} GHS\n`;
+    summaryText += `💰 *Revenue:* ${totalIncome.toFixed(2)} GHS\n`;
     summaryText += `💸 *Expenses:* ${totalExpense.toFixed(2)} GHS\n`;
     
     const profit = totalIncome - totalExpense;
