@@ -92,10 +92,6 @@ export const getDailySummary = async (req: Request, res: Response) => {
     const profitEmoji = profit >= 0 ? '✅' : '⚠️';
     summaryText += `${profitEmoji} *Net Profit:* ${profit.toFixed(2)} GHS\n\n`;
     
-    if (pdfUrl) {
-      summaryText += `📄 *Download Full Report:* ${pdfUrl}`;
-    }
-
     const summary = {
       date: startOfDay.toISOString().split('T')[0],
       currency: "GHS",
